@@ -55,9 +55,20 @@ Source d'idées (Sheet, Notion, Webhook)
 ### 4. Stockage
 
 - `projects/` : fichiers générés (audio, covers, vidéos).
-- PostgreSQL : workflows, logs, analytics.
-- Redis : queues.
+- PostgreSQL : base de données **partagée**, avec **un schéma par workflow**.
+- Redis : queue partagée pour tous les workflows.
 - S3 / Cloudinary : stockage distant.
+
+### Base de données multi-schema
+
+- Une seule base `automaton`.
+- Chaque workflow a son propre schéma PostgreSQL : `music_ai`, `workflow_template`, etc.
+- Les tables d'analytics et de logs sont isolées par workflow.
+- Avantages :
+  - Backup unique de la base.
+  - Permissions et isolation simples.
+  - Possibilité de requêtes cross-schema si nécessaire.
+- L'API expose `POST /analytics/:schema/events` pour stocker des événements dans le bon schéma.
 
 ### 5. Workflows
 
