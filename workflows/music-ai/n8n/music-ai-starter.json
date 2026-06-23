@@ -1,0 +1,101 @@
+{
+  "name": "Music AI Starter",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "music-ai-starter",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "music-ai-starter"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nconst projectId = 'track_' + Date.now();\nconst metadata = {\n  project_id: projectId,\n  title: body.title || 'Untitled Track',\n  genre: body.genre || 'electronic',\n  mood: body.mood || 'epic',\n  concept: {\n    suno_prompt: body.suno_prompt || 'upbeat electronic track, epic mood',\n    tiktok_prompt: body.tiktok_prompt || 'viral electronic hook',\n    youtube_prompt: body.youtube_prompt || 'epic electronic music video',\n    leonardo_prompt: body.leonardo_prompt || 'abstract epic music cover art'\n  },\n  assets: {},\n  timestamps: [],\n  uploads: {\n    youtube: false,\n    tiktok: false,\n    instagram: false\n  },\n  analytics: {},\n  created_at: new Date().toISOString()\n};\nreturn {\n  json: { projectId, metadata }\n};"
+      },
+      "id": "2",
+      "name": "Create Metadata",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.{{ $env.DOMAIN }}/jobs/ffmpeg",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "project_id": "={{ $json.projectId }}",
+          "task": "render_long",
+          "schema": "music_ai",
+          "metadata": "={{ JSON.stringify($json.metadata) }}"
+        },
+        "options": {}
+      },
+      "id": "3",
+      "name": "Queue FFmpeg",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"projectId\": \"{{ $json.projectId }}\", \"status\": \"queued\"}",
+        "options": {}
+      },
+      "id": "4",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Create Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Metadata": {
+      "main": [
+        [
+          {
+            "node": "Queue FFmpeg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Queue FFmpeg": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": []
+}

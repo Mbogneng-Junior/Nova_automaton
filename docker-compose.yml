@@ -55,6 +55,7 @@ services:
       - TZ=${TIMEZONE:-Europe/Paris}
     volumes:
       - ./data/n8n:/home/node/.n8n
+      - ./projects:/home/node/projects
     depends_on:
       - postgres
       - redis
