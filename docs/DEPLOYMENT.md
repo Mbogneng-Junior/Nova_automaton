@@ -56,6 +56,7 @@ nano .env
 
 ```bash
 docker run -it --rm \
+  -p 80:80 \
   -v /home/automaton/automaton/data/certbot/conf:/etc/letsencrypt \
   -v /home/automaton/automaton/data/certbot/www:/var/www/certbot \
   certbot/certbot certonly \
