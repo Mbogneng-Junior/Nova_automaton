@@ -13,8 +13,10 @@ services:
       - ./data/certbot/conf:/etc/letsencrypt:ro
       - ./data/certbot/www:/var/www/certbot:ro
     depends_on:
-      - n8n
-      - api
+      n8n:
+        condition: service_healthy
+      api:
+        condition: service_started
     networks:
       - automaton_network
 
