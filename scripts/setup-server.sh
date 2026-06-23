@@ -1,70 +1,84 @@
 #!/usr/bin/env bash
 set -e
 
-# Automaton - Initial setup script for DigitalOcean Droplet
-# Generic IA content automation stack
+# Automaton - Lightweight server setup
+# DigitalOcean Droplet / Ubuntu 24.04
 # Run as root or with sudo
+
+export DEBIAN_FRONTEND=noninteractive
+APT_OPTS="-y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold"
 
 echo "=== Automaton - Server Setup ==="
 
-# Update system
-apt-get update && apt-get upgrade -y
+# Update package lists only (no full upgrade by default, use --upgrade to enable)
+apt-get update
 
-# Install dependencies
-apt-get install -y \
-    apt-transport-https \
+if [[ "$1" == "--upgrade" ]]; then
+    echo "Upgrading packages..."
+    apt-get $APT_OPTS upgrade
+fi
+
+# Install only what's needed
+echo "Installing dependencies..."
+apt-get $APT_OPTS install \
     ca-certificates \
     curl \
-    gnupg \
-    lsb-release \
-    software-properties-common \
     git \
     ufw \
     fail2ban
 
-# Install Docker
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-apt-get update
-apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+# Install Docker if not present
+if ! command -v docker &> /dev/null; then
+    echo "Installing Docker..."
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt-get update
+    apt-get $APT_OPTS install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+else
+    echo "Docker already installed, skipping."
+fi
 
-# Install docker-compose v2 symlink if needed
-if ! command -v docker-compose &> /dev/null; then
+# docker-compose symlink if needed
+if [[ ! -e /usr/local/bin/docker-compose ]] && [[ -f /usr/libexec/docker/cli-plugins/docker-compose ]]; then
     ln -s /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
 fi
 
-# Enable Docker
 systemctl enable docker
 systemctl start docker
 
-# Create non-root user for deployment
+# Create non-root deploy user
 USERNAME="automaton"
 if ! id "$USERNAME" &>/dev/null; then
     useradd -m -s /bin/bash "$USERNAME"
-    usermod -aG docker "$USERNAME"
-    echo "User $USERNAME created and added to docker group."
+    echo "User $USERNAME created."
+fi
+usermod -aG docker "$USERNAME"
+
+# Firewall (idempotent)
+if ! ufw status | grep -q "Status: active"; then
+    ufw default deny incoming
+    ufw default allow outgoing
+    ufw allow OpenSSH
+    ufw allow 80/tcp
+    ufw allow 443/tcp
+    ufw allow 5678/tcp
+    ufw --force enable
+else
+    echo "UFW already active."
 fi
 
-# Firewall setup
-ufw default deny incoming
-ufw default allow outgoing
-ufw allow ssh
-ufw allow 80/tcp
-ufw allow 443/tcp
-ufw allow 5678/tcp
-ufw --force enable
-
 # Fail2ban
-systemctl enable fail2ban
-systemctl start fail2ban
+systemctl enable fail2ban || true
+systemctl start fail2ban || true
 
-# Create project directory
+# Project directory
 PROJECT_DIR="/home/$USERNAME/automaton"
 mkdir -p "$PROJECT_DIR"
 chown -R "$USERNAME:$USERNAME" "$PROJECT_DIR"
 
 echo "=== Server ready ==="
 echo "Next steps:"
-echo "1. Clone the repository: git clone https://github.com/TON_COMPTE/automaton.git $PROJECT_DIR"
-echo "2. Copy .env.example to .env and fill it"
-echo "3. Run: cd $PROJECT_DIR && docker-compose up -d"
+echo "1. Clone the repo: git clone https://github.com/TON_COMPTE/automaton.git $PROJECT_DIR"
+echo "2. cd $PROJECT_DIR && cp .env.example .env && nano .env"
+echo "3. Generate SSL certificate (see docs/DEPLOYMENT.md)"
+echo "4. docker-compose up -d"
