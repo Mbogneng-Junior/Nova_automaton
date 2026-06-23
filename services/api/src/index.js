@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+const fs = require('fs').promises;
+const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -11,6 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const REDIS_URL = process.env.REDIS_URL || 'redis://redis:6379';
 const POSTGRES_URL = process.env.POSTGRES_URL || 'postgres://postgres:postgres@postgres:5432/automaton';
+const PROJECTS_DIR = process.env.PROJECTS_DIR || '/app/projects';
 
 const redisConnection = new IORedis(REDIS_URL, { maxRetriesPerRequest: null });
 const pgPool = new Pool({ connectionString: POSTGRES_URL });
@@ -18,6 +21,70 @@ const pgPool = new Pool({ connectionString: POSTGRES_URL });
 const ffmpegQueue = new Queue('ffmpeg', { connection: redisConnection });
 const uploadQueue = new Queue('upload', { connection: redisConnection });
 const analyticsQueue = new Queue('analytics', { connection: redisConnection });
+
+async function generateWithOpenAI({ model, prompt, temperature = 0.7, max_tokens = 1024 }) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: model || 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature,
+      max_tokens
+    })
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error?.message || 'OpenAI error');
+  return data.choices[0].message.content;
+}
+
+async function generateWithAnthropic({ model, prompt, temperature = 0.7, max_tokens = 1024 }) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: model || 'claude-3-5-sonnet-20241022',
+      max_tokens,
+      temperature,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error?.message || 'Anthropic error');
+  return data.content[0].text;
+}
+
+async function generateWithDeepSeek({ model, prompt, temperature = 0.7, max_tokens = 1024 }) {
+  const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: model || 'deepseek-chat',
+      messages: [{ role: 'user', content: prompt }],
+      temperature,
+      max_tokens
+    })
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error?.message || 'DeepSeek error');
+  return data.choices[0].message.content;
+}
+
+const aiProviders = {
+  openai: generateWithOpenAI,
+  anthropic: generateWithAnthropic,
+  deepseek: generateWithDeepSeek
+};
 
 async function withSchema(schema, callback) {
   const client = await pgPool.connect();
@@ -54,6 +121,46 @@ app.get('/schemas/:schema/health', async (req, res) => {
     res.json({ status: 'ok', schema: result.rows[0].current_schema });
   } catch (err) {
     res.status(500).json({ status: 'error', error: err.message });
+  }
+});
+
+app.post('/ai/generate', async (req, res) => {
+  try {
+    const { provider, prompt, model, temperature, max_tokens } = req.body;
+    if (!provider || !prompt) {
+      return res.status(400).json({ error: 'provider and prompt are required' });
+    }
+    const generate = aiProviders[provider.toLowerCase()];
+    if (!generate) {
+      return res.status(400).json({ error: `Unknown provider: ${provider}. Supported: ${Object.keys(aiProviders).join(', ')}` });
+    }
+    const text = await generate({ model, prompt, temperature, max_tokens });
+    res.json({ provider, prompt, text });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/projects/:id', async (req, res) => {
+  try {
+    const filePath = path.join(PROJECTS_DIR, req.params.id, 'metadata.json');
+    const data = await fs.readFile(filePath, 'utf8');
+    res.json(JSON.parse(data));
+  } catch (err) {
+    if (err.code === 'ENOENT') return res.status(404).json({ error: 'Project not found' });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/projects/:id', async (req, res) => {
+  try {
+    const dir = path.join(PROJECTS_DIR, req.params.id);
+    await fs.mkdir(dir, { recursive: true });
+    const filePath = path.join(dir, 'metadata.json');
+    await fs.writeFile(filePath, JSON.stringify(req.body, null, 2), 'utf8');
+    res.json({ status: 'stored', project_id: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
