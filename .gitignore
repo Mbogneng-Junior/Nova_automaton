@@ -45,3 +45,6 @@ __pycache__/
 # IDE
 .vscode/
 .idea/
+
+# Browser downloads / screenshots
+result/

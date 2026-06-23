@@ -17,13 +17,59 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $input.first().json.body || {};\nconst projectId = 'track_' + Date.now();\nconst metadata = {\n  project_id: projectId,\n  title: body.title || 'Untitled Track',\n  genre: body.genre || 'electronic',\n  mood: body.mood || 'epic',\n  concept: {\n    suno_prompt: body.suno_prompt || 'upbeat electronic track, epic mood',\n    tiktok_prompt: body.tiktok_prompt || 'viral electronic hook',\n    youtube_prompt: body.youtube_prompt || 'epic electronic music video',\n    leonardo_prompt: body.leonardo_prompt || 'abstract epic music cover art'\n  },\n  assets: {},\n  timestamps: [],\n  uploads: {\n    youtube: false,\n    tiktok: false,\n    instagram: false\n  },\n  analytics: {},\n  created_at: new Date().toISOString()\n};\nreturn {\n  json: { projectId, metadata }\n};"
+        "jsCode": "const body = $input.first().json.body || {};\nconst projectId = 'track_' + Date.now();\nconst provider = body.provider || 'openai';\nconst metadata = {\n  project_id: projectId,\n  provider: provider,\n  title: body.title || 'Untitled Track',\n  genre: body.genre || 'electronic',\n  mood: body.mood || 'epic',\n  concept: {},\n  assets: {},\n  timestamps: [],\n  uploads: {\n    youtube: false,\n    tiktok: false,\n    instagram: false\n  },\n  analytics: {},\n  created_at: new Date().toISOString()\n};\nconst prompt = `You are a music marketing expert. Create a detailed concept for a ${metadata.genre} track titled \"${metadata.title}\" with a ${metadata.mood} mood.\\n\\nReturn ONLY a JSON object with these keys:\\nsuno_prompt: a detailed prompt for Suno AI to generate the track\\nleonardo_prompt: a prompt for Leonardo AI to generate cover art\\nyoutube_title: title for YouTube\\nyoutube_description: description for YouTube (include hashtags)\\ntiktok_caption: caption for TikTok (include hashtags)\\ninstagram_caption: caption for Instagram (include hashtags)\\nhook: the main viral hook of the song (1 sentence)\\n`;\nreturn {\n  json: { projectId, provider, prompt, metadata }\n};"
       },
       "id": "2",
       "name": "Create Metadata",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.{{ $env.DOMAIN }}/ai/generate",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "provider": "={{ $json.provider }}",
+          "prompt": "={{ $json.prompt }}",
+          "model": "={{ $json.provider === 'openai' ? 'gpt-4o-mini' : $json.provider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : 'deepseek-chat' }}",
+          "temperature": 0.8,
+          "max_tokens": 1024
+        },
+        "options": {}
+      },
+      "id": "3",
+      "name": "AI Generate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiText = $input.first().json.text;\nconst { projectId, provider, metadata } = $('Create Metadata').item.json;\nlet concept = {};\ntry {\n  const parsed = JSON.parse(aiText);\n  concept = parsed;\n} catch (e) {\n  // Fallback: store raw text if JSON parsing fails\n  concept = { raw: aiText };\n}\nmetadata.concept = concept;\nmetadata.concept.provider = provider;\nreturn {\n  json: { projectId, metadata }\n};"
+      },
+      "id": "4",
+      "name": "Merge Concept",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.{{ $env.DOMAIN }}/projects/{{ $json.projectId }}",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify($json.metadata) }}",
+        "options": {}
+      },
+      "id": "5",
+      "name": "Store Project",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 300]
     },
     {
       "parameters": {
@@ -35,15 +81,17 @@
           "project_id": "={{ $json.projectId }}",
           "task": "render_long",
           "schema": "music_ai",
-          "metadata": "={{ JSON.stringify($json.metadata) }}"
+          "cover_path": "assets/cover.png",
+          "audio_path": "assets/audio.mp3",
+          "output_path": "outputs/video_long.mp4"
         },
         "options": {}
       },
-      "id": "3",
+      "id": "6",
       "name": "Queue FFmpeg",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [650, 300]
+      "position": [1250, 300]
     },
     {
       "parameters": {
@@ -51,11 +99,11 @@
         "responseBody": "={\"projectId\": \"{{ $('Create Metadata').item.json.projectId }}\", \"status\": \"queued\"}",
         "options": {}
       },
-      "id": "4",
+      "id": "7",
       "name": "Respond to Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [850, 300]
+      "position": [1450, 300]
     }
   ],
   "connections": {
@@ -71,6 +119,39 @@
       ]
     },
     "Create Metadata": {
+      "main": [
+        [
+          {
+            "node": "AI Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Generate": {
+      "main": [
+        [
+          {
+            "node": "Merge Concept",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Concept": {
+      "main": [
+        [
+          {
+            "node": "Store Project",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Project": {
       "main": [
         [
           {
