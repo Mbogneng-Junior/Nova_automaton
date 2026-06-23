@@ -1,0 +1,63 @@
+{
+  "workflow_id": "music-ai",
+  "project_id": "song_001",
+  "title": "Titre viral",
+  "genre": "Afrobeat",
+  "mood": "Mélancolique",
+  "theme": "Rupture",
+  "language": "fr",
+  "artist_reference": "Burna Boy vibes",
+  "concept": {
+    "titre_viral": "Titre accrocheur",
+    "prompt_suno": "Afrobeat mélancolique francophone, rupture amoureuse, nuit parisienne, voix douce, instruments traditionnels africains mêlés à des synthés modernes",
+    "hook_tiktok": "Phrase d'accroche < 5 secondes",
+    "description_youtube": "Description SEO optimisée 150-200 mots",
+    "hashtags": ["#afrobeat", "#musiquefrancaise", "#melancolie", "#elyx", "#nuitparisienne"],
+    "prompt_cover": "Afrofuturistic French artist, neon Paris night, luxury aesthetic, anime realism, dark blue atmosphere, cinematic, 4K, square format 1:1"
+  },
+  "assets": {
+    "audio_url": "songs/song_001/audio/music.mp3",
+    "cover_url": "songs/song_001/cover/cover.jpg",
+    "cover_short_url": "songs/song_001/cover/cover_9x16.jpg",
+    "video_url": "songs/song_001/exports/video.mp4",
+    "shorts": [
+      "songs/song_001/shorts/short_1.mp4",
+      "songs/song_001/shorts/short_2.mp4",
+      "songs/song_001/shorts/short_3.mp4"
+    ],
+    "subtitles": "songs/song_001/subtitles/subtitles.srt"
+  },
+  "timestamps": {
+    "short_1": ["00:00:15", "00:00:30"],
+    "short_2": ["00:00:45", "00:01:00"],
+    "short_3": ["00:01:10", "00:01:25"]
+  },
+  "distribution": {
+    "youtube": {
+      "video_id": null,
+      "scheduled_time": null,
+      "status": "pending"
+    },
+    "tiktok": {
+      "video_ids": [],
+      "status": "pending"
+    },
+    "instagram": {
+      "video_ids": [],
+      "status": "pending"
+    },
+    "spotify": {
+      "status": "pending"
+    }
+  },
+  "analytics": {
+    "ctr": null,
+    "watch_time": null,
+    "retention": null,
+    "replay_rate": null,
+    "comments": []
+  },
+  "status": "draft",
+  "created_at": "2026-06-23T00:00:00Z",
+  "updated_at": "2026-06-23T00:00:00Z"
+}
