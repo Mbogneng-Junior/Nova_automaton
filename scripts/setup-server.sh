@@ -76,6 +76,12 @@ PROJECT_DIR="/home/$USERNAME/automaton"
 mkdir -p "$PROJECT_DIR"
 chown -R "$USERNAME:$USERNAME" "$PROJECT_DIR"
 
+# Data directories with correct ownership for containers
+mkdir -p "$PROJECT_DIR/data/n8n" "$PROJECT_DIR/data/postgres" "$PROJECT_DIR/data/redis"
+chown -R 1000:1000 "$PROJECT_DIR/data/n8n"
+chown -R 70:70 "$PROJECT_DIR/data/postgres"
+chown -R 999:999 "$PROJECT_DIR/data/redis"
+
 echo "=== Server ready ==="
 echo "Next steps:"
 echo "1. Clone the repo: git clone https://github.com/TON_COMPTE/automaton.git $PROJECT_DIR"
