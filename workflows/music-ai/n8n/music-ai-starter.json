@@ -48,7 +48,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\"projectId\": \"{{ $json.projectId }}\", \"status\": \"queued\"}",
+        "responseBody": "={\"projectId\": \"{{ $('Create Metadata').item.json.projectId }}\", \"status\": \"queued\"}",
         "options": {}
       },
       "id": "4",
