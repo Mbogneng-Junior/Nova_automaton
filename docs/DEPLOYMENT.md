@@ -60,7 +60,7 @@ docker run -it --rm \
   -v /home/automaton/automaton/data/certbot/www:/var/www/certbot \
   certbot/certbot certonly \
   --standalone \
-  -d tonprojet.com -d n8n.tonprojet.com -d api.tonprojet.com
+  -d automaton.neurenova.tech -d n8n.automaton.neurenova.tech -d api.automaton.neurenova.tech
 ```
 
 ### 6. Lancer la stack
@@ -73,10 +73,10 @@ docker-compose up -d
 
 ```bash
 # Health check
-curl https://api.tonprojet.com/health
+curl https://api.automaton.neurenova.tech/health
 
 # n8n
-# Ouvrir https://n8n.tonprojet.com
+# Ouvrir https://n8n.automaton.neurenova.tech
 ```
 
 ## Mise à jour
