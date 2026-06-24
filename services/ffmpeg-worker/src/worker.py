@@ -127,16 +127,18 @@ def main():
     logger.info("FFmpeg worker started. Waiting for jobs...")
     while True:
         try:
-            _, raw = redis_conn.brpop('bull:ffmpeg:wait', timeout=5)
-            if raw:
-                payload = json.loads(raw)
-                logger.info("Processing job: %s", payload)
-                result = process_job(payload)
-                redis_conn.lpush('bull:ffmpeg:completed', json.dumps({
-                    'jobId': payload.get('id'),
-                    'result': result
-                }))
-                logger.info("Job completed: %s", result)
+            item = redis_conn.brpop('bull:ffmpeg:wait', timeout=5)
+            if not item:
+                continue
+            _, raw = item
+            payload = json.loads(raw)
+            logger.info("Processing job: %s", payload)
+            result = process_job(payload)
+            redis_conn.lpush('bull:ffmpeg:completed', json.dumps({
+                'jobId': payload.get('id'),
+                'result': result
+            }))
+            logger.info("Job completed: %s", result)
         except Exception as e:
             logger.error("Job failed: %s", e)
             time.sleep(1)
