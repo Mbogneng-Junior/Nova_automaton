@@ -63,7 +63,7 @@ services:
       - ./data/n8n:/home/node/.n8n
       - ./projects:/home/node/projects
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5678/healthz"]
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:5678/healthz"]
       interval: 10s
       timeout: 5s
       retries: 5
