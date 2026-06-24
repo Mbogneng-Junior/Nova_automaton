@@ -19,7 +19,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $input.first().json.body || {};\nconst projectId = 'track_' + Date.now();\nconst provider = body.provider || 'openai';\nconst model = provider === 'openai' ? 'gpt-4o-mini' : provider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : provider === 'mistral' ? 'mistral-medium-latest' : 'deepseek-chat';\nconst metadata = {\n  project_id: projectId,\n  provider: provider,\n  title: body.title || 'Untitled Track',\n  genre: body.genre || 'electronic',\n  mood: body.mood || 'epic',\n  concept: {},\n  assets: {},\n  timestamps: [],\n  uploads: { youtube: false, tiktok: false, instagram: false },\n  analytics: {},\n  created_at: new Date().toISOString()\n};\nconst prompt = `You are a music marketing expert. Create a detailed concept for a ${metadata.genre} track titled \"${metadata.title}\" with a ${metadata.mood} mood.\\n\\nReturn ONLY a JSON object with these keys:\\nsuno_prompt: a detailed prompt for Suno AI to generate the track\\nleonardo_prompt: a prompt for Leonardo AI to generate cover art\\nyoutube_title: title for YouTube\\nyoutube_description: description for YouTube (include hashtags)\\ntiktok_caption: caption for TikTok (include hashtags)\\ninstagram_caption: caption for Instagram (include hashtags)\\nhook: the main viral hook of the song (1 sentence)\\n`;\nreturn [{ json: { projectId, provider, prompt, model, metadata } }];",
+        "jsCode": "const body = $input.first().json.body || {};\nconst projectId = 'track_' + Date.now();\nconst provider = body.provider || 'openai';\nconst model = provider === 'openai' ? 'gpt-4o-mini' : provider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : provider === 'mistral' ? 'mistral-medium-latest' : 'deepseek-chat';\nconst metadata = {\n  project_id: projectId,\n  provider: provider,\n  title: body.title || 'Untitled Track',\n  genre: body.genre || 'electronic',\n  mood: body.mood || 'epic',\n  concept: {},\n  assets: {},\n  timestamps: [],\n  uploads: { youtube: false, tiktok: false, instagram: false },\n  analytics: {},\n  created_at: new Date().toISOString()\n};\nconst prompt = `You are a music marketing expert. Create a detailed concept for a ${metadata.genre} track titled \"${metadata.title}\" with a ${metadata.mood} mood.\\n\\nReturn ONLY a JSON object with these keys:\\nsuno_prompt: a detailed prompt for Suno AI to generate the track\\nleonardo_prompt: a prompt for Leonardo AI to generate cover art\\nyoutube_title: title for YouTube\\nyoutube_description: description for YouTube (include hashtags)\\ntiktok_caption: caption for TikTok (include hashtags)\\ninstagram_caption: caption for Instagram (include hashtags)\\nhook: the main viral hook of the song (1 sentence)\\n`;\nconst bodyJson = JSON.stringify({ provider, prompt, model, temperature: 0.8, max_tokens: 1024 });\nreturn [{ json: { projectId, provider, prompt, model, metadata, bodyJson } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "2",
@@ -35,7 +35,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={\"provider\":\"{{ $json.provider }}\",\"prompt\":\"{{ $json.prompt }}\",\"model\":\"{{ $json.model }}\",\"temperature\":0.8,\"max_tokens\":1024}",
+        "jsonBody": "={{ $json.bodyJson }}",
         "options": {}
       },
       "id": "3",
@@ -46,7 +46,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const aiResponse = items[0].json;\nconst createMetadata = $('Create Metadata').all()[0].json;\nconst aiText = aiResponse.text;\nconst projectId = createMetadata.projectId;\nconst provider = createMetadata.provider;\nconst metadata = createMetadata.metadata;\nlet concept = {};\ntry {\n  concept = JSON.parse(aiText);\n} catch (e) {\n  concept = { raw: aiText };\n}\nmetadata.concept = concept;\nmetadata.concept.provider = provider;\nreturn [{ json: { projectId, metadata, metadataJson: JSON.stringify(metadata) } }];",
+        "jsCode": "const aiResponse = items[0].json;\nconst createMetadata = $('Create Metadata').all()[0].json;\nconst aiText = aiResponse.text;\nconst projectId = createMetadata.projectId;\nconst provider = createMetadata.provider;\nconst metadata = createMetadata.metadata;\nlet concept = {};\ntry {\n  concept = JSON.parse(aiText);\n} catch (e) {\n  concept = { raw: aiText };\n}\nmetadata.concept = concept;\nmetadata.concept.provider = provider;\nconst ffmpegBody = JSON.stringify({ project_id: projectId, task: 'render_long', schema: 'music_ai', cover_path: 'assets/cover.png', audio_path: 'assets/audio.mp3', output_path: 'outputs/video_long.mp4' });\nreturn [{ json: { projectId, metadata, metadataJson: JSON.stringify(metadata), ffmpegBody } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "4",
@@ -78,7 +78,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={\"project_id\":\"{{ $json.projectId }}\",\"task\":\"render_long\",\"schema\":\"music_ai\",\"cover_path\":\"assets/cover.png\",\"audio_path\":\"assets/audio.mp3\",\"output_path\":\"outputs/video_long.mp4\"}",
+        "jsonBody": "={{ $json.ffmpegBody }}",
         "options": {}
       },
       "id": "6",
