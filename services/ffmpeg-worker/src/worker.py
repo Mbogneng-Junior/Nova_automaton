@@ -130,12 +130,21 @@ def main():
             item = redis_conn.brpop('bull:ffmpeg:wait', timeout=5)
             if not item:
                 continue
-            _, raw = item
-            payload = json.loads(raw)
+            _, job_id = item
+            logger.info("Got job ID: %s", job_id)
+
+            # BullMQ stores job data in a hash: bull:ffmpeg:{id}
+            job_key = f"bull:ffmpeg:{job_id}"
+            job_data = redis_conn.hgetall(job_key)
+            if not job_data or 'data' not in job_data:
+                logger.error("No data found for job %s", job_id)
+                continue
+
+            payload = json.loads(job_data['data'])
             logger.info("Processing job: %s", payload)
             result = process_job(payload)
             redis_conn.lpush('bull:ffmpeg:completed', json.dumps({
-                'jobId': payload.get('id'),
+                'jobId': job_id,
                 'result': result
             }))
             logger.info("Job completed: %s", result)
