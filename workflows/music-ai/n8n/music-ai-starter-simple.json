@@ -22,15 +22,8 @@
         "url": "=https://api.automaton.neurenova.tech/workflow/music-ai",
         "sendBody": true,
         "contentType": "json",
-        "specifyBody": "usingFieldsBelow",
-        "bodyParameters": {
-          "parameters": [
-            { "name": "title", "value": "={{ $json.body.title }}" },
-            { "name": "genre", "value": "={{ $json.body.genre }}" },
-            { "name": "mood", "value": "={{ $json.body.mood }}" },
-            { "name": "provider", "value": "={{ $json.body.provider }}" }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "{\"title\":\"={{ $json.body.title }}\",\"genre\":\"={{ $json.body.genre }}\",\"mood\":\"={{ $json.body.mood }}\",\"provider\":\"={{ $json.body.provider }}\"}",
         "options": {}
       },
       "id": "2",
