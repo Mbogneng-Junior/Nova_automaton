@@ -62,7 +62,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ $json.metadataJson }}",
+        "jsonBody": "={{ $('Merge Concept').first().json.metadataJson }}",
         "options": {}
       },
       "id": "5",
@@ -78,7 +78,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ $json.ffmpegBody }}",
+        "jsonBody": "={{ $('Merge Concept').first().json.ffmpegBody }}",
         "options": {}
       },
       "id": "6",
