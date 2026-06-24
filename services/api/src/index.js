@@ -178,7 +178,7 @@ app.post('/projects/:id', async (req, res) => {
     await fs.mkdir(dir, { recursive: true });
     const filePath = path.join(dir, 'metadata.json');
     await fs.writeFile(filePath, JSON.stringify(req.body, null, 2), 'utf8');
-    res.json({ status: 'stored', project_id: req.params.id });
+    res.json({ status: 'stored', project_id: req.params.id, projectId: req.params.id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -187,7 +187,7 @@ app.post('/projects/:id', async (req, res) => {
 app.post('/jobs/ffmpeg', async (req, res) => {
   try {
     const job = await ffmpegQueue.add('render', req.body, { attempts: 3, backoff: 5000 });
-    res.json({ id: job.id, status: 'queued', schema: req.body.schema || 'public' });
+    res.json({ id: job.id, status: 'queued', schema: req.body.schema || 'public', projectId: req.body.project_id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -1,0 +1,193 @@
+{
+  "name": "Music AI Starter",
+  "id": "new",
+  "meta": { "instanceId": "automaton-music-ai-01" },
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "music-ai-starter",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "music-ai-starter"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nconst projectId = 'track_' + Date.now();\nconst provider = body.provider || 'openai';\nconst model = provider === 'openai' ? 'gpt-4o-mini' : provider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : provider === 'mistral' ? 'mistral-medium-latest' : 'deepseek-chat';\nconst metadata = {\n  project_id: projectId,\n  provider: provider,\n  title: body.title || 'Untitled Track',\n  genre: body.genre || 'electronic',\n  mood: body.mood || 'epic',\n  concept: {},\n  assets: {},\n  timestamps: [],\n  uploads: { youtube: false, tiktok: false, instagram: false },\n  analytics: {},\n  created_at: new Date().toISOString()\n};\nconst prompt = `You are a music marketing expert. Create a detailed concept for a ${metadata.genre} track titled \"${metadata.title}\" with a ${metadata.mood} mood.\\n\\nReturn ONLY a JSON object with these keys:\\nsuno_prompt: a detailed prompt for Suno AI to generate the track\\nleonardo_prompt: a prompt for Leonardo AI to generate cover art\\nyoutube_title: title for YouTube\\nyoutube_description: description for YouTube (include hashtags)\\ntiktok_caption: caption for TikTok (include hashtags)\\ninstagram_caption: caption for Instagram (include hashtags)\\nhook: the main viral hook of the song (1 sentence)\\n`;\nreturn [{ json: { projectId, provider, prompt, model, metadata } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "2",
+      "name": "Create Metadata",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.automaton.neurenova.tech/ai/generate",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "usingFieldsBelow",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "provider", "value": "={{ $json.provider }}" },
+            { "name": "prompt", "value": "={{ $json.prompt }}" },
+            { "name": "model", "value": "={{ $json.model }}" },
+            { "name": "temperature", "value": "0.8" },
+            { "name": "max_tokens", "value": "1024" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3",
+      "name": "AI Generate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiResponse = items[0].json;\nconst createMetadata = $('Create Metadata').all()[0].json;\nconst aiText = aiResponse.text;\nconst projectId = createMetadata.projectId;\nconst provider = createMetadata.provider;\nconst metadata = createMetadata.metadata;\nlet concept = {};\ntry {\n  concept = JSON.parse(aiText);\n} catch (e) {\n  concept = { raw: aiText };\n}\nmetadata.concept = concept;\nmetadata.concept.provider = provider;\nreturn [{ json: { projectId, metadata } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "4",
+      "name": "Merge Concept",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.automaton.neurenova.tech/projects/{{ $json.projectId }}",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.metadata) }}",
+        "options": {}
+      },
+      "id": "5",
+      "name": "Store Project",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.automaton.neurenova.tech/jobs/ffmpeg",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "usingFieldsBelow",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "project_id", "value": "={{ $json.projectId }}" },
+            { "name": "task", "value": "render_long" },
+            { "name": "schema", "value": "music_ai" },
+            { "name": "cover_path", "value": "assets/cover.png" },
+            { "name": "audio_path", "value": "assets/audio.mp3" },
+            { "name": "output_path", "value": "outputs/video_long.mp4" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6",
+      "name": "Queue FFmpeg",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ projectId: $json.projectId, status: 'queued' }) }}",
+        "options": {}
+      },
+      "id": "7",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1450, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Create Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Metadata": {
+      "main": [
+        [
+          {
+            "node": "AI Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Generate": {
+      "main": [
+        [
+          {
+            "node": "Merge Concept",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Concept": {
+      "main": [
+        [
+          {
+            "node": "Store Project",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Project": {
+      "main": [
+        [
+          {
+            "node": "Queue FFmpeg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Queue FFmpeg": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": []
+}
