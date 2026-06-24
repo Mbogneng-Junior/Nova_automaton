@@ -1,5 +1,6 @@
 {
   "name": "Music AI Starter",
+  "id": "new",
   "nodes": [
     {
       "parameters": {
