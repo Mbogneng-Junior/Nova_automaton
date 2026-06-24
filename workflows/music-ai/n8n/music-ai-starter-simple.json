@@ -23,7 +23,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "{\"title\":\"={{ $json.body.title }}\",\"genre\":\"={{ $json.body.genre }}\",\"mood\":\"={{ $json.body.mood }}\",\"provider\":\"={{ $json.body.provider }}\"}",
+        "jsonBody": "={\"title\":\"{{ $json.body.title }}\",\"genre\":\"{{ $json.body.genre }}\",\"mood\":\"{{ $json.body.mood }}\",\"provider\":\"{{ $json.body.provider }}\"}",
         "options": {}
       },
       "id": "2",
