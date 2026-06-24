@@ -31,6 +31,7 @@
         "url": "=https://api.automaton.neurenova.tech/ai/generate",
         "sendBody": true,
         "contentType": "json",
+        "specifyBody": "usingJson",
         "body": {
           "provider": "={{ $json.provider }}",
           "prompt": "={{ $json.prompt }}",
@@ -62,6 +63,7 @@
         "url": "=https://api.automaton.neurenova.tech/projects/{{ $json.projectId }}",
         "sendBody": true,
         "contentType": "json",
+        "specifyBody": "usingJson",
         "body": "={{ JSON.stringify($json.metadata) }}",
         "options": {}
       },
@@ -77,6 +79,7 @@
         "url": "=https://api.automaton.neurenova.tech/jobs/ffmpeg",
         "sendBody": true,
         "contentType": "json",
+        "specifyBody": "usingJson",
         "body": {
           "project_id": "={{ $json.projectId }}",
           "task": "render_long",
