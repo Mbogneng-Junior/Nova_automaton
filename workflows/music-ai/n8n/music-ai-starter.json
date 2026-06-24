@@ -34,7 +34,7 @@
         "body": {
           "provider": "={{ $json.provider }}",
           "prompt": "={{ $json.prompt }}",
-          "model": "={{ $json.provider === 'openai' ? 'gpt-4o-mini' : $json.provider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : 'deepseek-chat' }}",
+          "model": "={{ $json.provider === 'openai' ? 'gpt-4o-mini' : $json.provider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : $json.provider === 'mistral' ? 'mistral-medium-latest' : 'deepseek-chat' }}",
           "temperature": 0.8,
           "max_tokens": 1024
         },
