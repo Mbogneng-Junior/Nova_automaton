@@ -46,7 +46,8 @@
     },
     {
       "parameters": {
-        "jsCode": "const aiResponse = items[0].json;\nconst createMetadata = $('Create Metadata').all()[0].json;\nconst aiText = aiResponse.text;\nconst projectId = createMetadata.projectId;\nconst provider = createMetadata.provider;\nconst metadata = createMetadata.metadata;\nlet concept = {};\ntry {\n  concept = JSON.parse(aiText);\n} catch (e) {\n  concept = { raw: aiText };\n}\nmetadata.concept = concept;\nmetadata.concept.provider = provider;\nconst ffmpegBody = JSON.stringify({ project_id: projectId, task: 'render_long', schema: 'music_ai', cover_path: 'assets/cover.png', audio_path: 'assets/audio.mp3', output_path: 'outputs/video_long.mp4' });\nreturn [{ json: { projectId, metadata, metadataJson: JSON.stringify(metadata), ffmpegBody } }];",
+        "jsCode": "const aiResponse = items[0].json;\nconst createMetadata = $('Create Metadata').all()[0].json;\nconst aiText = aiResponse.text;\nconst projectId = createMetadata.projectId;\nconst provider = createMetadata.provider;\nconst metadata = createMetadata.metadata;\nlet concept = {};\ntry {\n  concept = JSON.parse(aiText);\n} catch (e) {\n  concept = { raw: aiText };\n}\nmetadata.concept = concept;\nmetadata.concept.provider = provider;\nconst sunoPrompt = concept.suno_prompt || `Generate a ${metadata.genre} track titled \"${metadata.title}\" with ${metadata.mood} mood`;\nconst leoPrompt = concept.leonardo_prompt || `Album cover art for ${metadata.genre} track \"${metadata.title}\", ${metadata.mood} mood`;\nconst sunoBodyJson = JSON.stringify({ project_id: projectId, prompt: sunoPrompt, model_version: 'V4' });\nconst leoBodyJson = JSON.stringify({ project_id: projectId, prompt: leoPrompt, width: 1024, height: 1024 });\nconst ffmpegBody = JSON.stringify({ project_id: projectId, task: 'render_long', schema: 'music_ai', cover_path: 'assets/cover.png', audio_path: 'assets/audio.mp3', output_path: 'outputs/video_long.mp4' });\nreturn [{ json: { projectId, metadata, metadataJson: JSON.stringify(metadata), sunoBodyJson, leoBodyJson, ffmpegBody } }];",
+
         "mode": "runOnceForAllItems"
       },
       "id": "4",
@@ -54,6 +55,38 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.automaton.neurenova.tech/ai/generate-music",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Merge Concept').first().json.sunoBodyJson }}",
+        "options": { "timeout": 180000 }
+      },
+      "id": "8",
+      "name": "Generate Music",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [950, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.automaton.neurenova.tech/ai/generate-cover",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Merge Concept').first().json.leoBodyJson }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "9",
+      "name": "Generate Cover",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [950, 400]
     },
     {
       "parameters": {
@@ -69,7 +102,7 @@
       "name": "Store Project",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1050, 300]
+      "position": [1150, 300]
     },
     {
       "parameters": {
@@ -135,6 +168,33 @@
       ]
     },
     "Merge Concept": {
+      "main": [
+        [
+          {
+            "node": "Generate Music",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Cover",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Music": {
+      "main": [
+        [
+          {
+            "node": "Store Project",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Cover": {
       "main": [
         [
           {

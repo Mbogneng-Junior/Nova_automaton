@@ -300,6 +300,174 @@ app.post('/workflow/music-ai', async (req, res) => {
   }
 });
 
+// Generate music with Suno AI
+app.post('/ai/generate-music', async (req, res) => {
+  try {
+    const { project_id, prompt, model_version = 'V4' } = req.body;
+    if (!project_id || !prompt) {
+      return res.status(400).json({ error: 'project_id and prompt are required' });
+    }
+
+    const sunoKey = process.env.SUNO_API_KEY;
+    if (!sunoKey) {
+      return res.status(500).json({ error: 'SUNO_API_KEY not configured' });
+    }
+
+    // 1. Call Suno API
+    const genRes = await fetch('https://api.sunoapi.org/api/v1/generate', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${sunoKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt,
+        model_version,
+        make_instrumental: false
+      })
+    });
+    const genData = await genRes.json();
+    if (!genRes.ok) {
+      return res.status(500).json({ error: genData.error || 'Suno generation failed' });
+    }
+
+    const taskId = genData.task_id || genData.id;
+    if (!taskId) {
+      return res.status(500).json({ error: 'No task_id returned from Suno', raw: genData });
+    }
+
+    // 2. Poll for completion (max 120s)
+    let musicUrl = null;
+    for (let i = 0; i < 30; i++) {
+      await new Promise(r => setTimeout(r, 4000));
+      const statusRes = await fetch(`https://api.sunoapi.org/api/v1/status/${taskId}`, {
+        headers: { 'Authorization': `Bearer ${sunoKey}` }
+      });
+      const statusData = await statusRes.json();
+      if (statusData.status === 'completed' || statusData.status === 'done') {
+        musicUrl = statusData.audio_url || statusData.url || statusData.download_url;
+        if (musicUrl) break;
+      }
+      if (statusData.status === 'failed' || statusData.status === 'error') {
+        return res.status(500).json({ error: 'Suno generation failed', details: statusData });
+      }
+    }
+
+    if (!musicUrl) {
+      return res.status(500).json({ error: 'Suno generation timeout', task_id: taskId });
+    }
+
+    // 3. Download MP3
+    const dir = path.join(PROJECTS_DIR, project_id, 'assets');
+    await fs.mkdir(dir, { recursive: true });
+    const audioPath = path.join(dir, 'audio.mp3');
+
+    const audioRes = await fetch(musicUrl);
+    if (!audioRes.ok) throw new Error('Failed to download audio');
+    const buffer = await audioRes.arrayBuffer();
+    await fs.writeFile(audioPath, Buffer.from(buffer));
+
+    // 4. Update metadata
+    const metaPath = path.join(PROJECTS_DIR, project_id, 'metadata.json');
+    let metadata = {};
+    try {
+      metadata = JSON.parse(await fs.readFile(metaPath, 'utf8'));
+    } catch (e) {}
+    metadata.assets = metadata.assets || {};
+    metadata.assets.audio = 'assets/audio.mp3';
+    metadata.assets.audio_url = musicUrl;
+    await fs.writeFile(metaPath, JSON.stringify(metadata, null, 2));
+
+    res.json({ status: 'completed', path: 'assets/audio.mp3', task_id: taskId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Generate cover art with Leonardo AI
+app.post('/ai/generate-cover', async (req, res) => {
+  try {
+    const { project_id, prompt, width = 1024, height = 1024 } = req.body;
+    if (!project_id || !prompt) {
+      return res.status(400).json({ error: 'project_id and prompt are required' });
+    }
+
+    const leoKey = process.env.LEONARDO_API_KEY;
+    if (!leoKey) {
+      return res.status(500).json({ error: 'LEONARDO_API_KEY not configured' });
+    }
+
+    // 1. Call Leonardo API
+    const genRes = await fetch('https://cloud.leonardo.ai/api/v1/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${leoKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt,
+        modelId: '6b645e2f-82f2-4b66-8f5e-c52983bda5e4',
+        width,
+        height,
+        num_images: 1
+      })
+    });
+    const genData = await genRes.json();
+    if (!genRes.ok) {
+      return res.status(500).json({ error: genData.error || 'Leonardo generation failed' });
+    }
+
+    const generationId = genData.sdGenerationJob?.generationId;
+    if (!generationId) {
+      return res.status(500).json({ error: 'No generationId returned from Leonardo', raw: genData });
+    }
+
+    // 2. Poll for completion (max 60s)
+    let imageUrl = null;
+    for (let i = 0; i < 15; i++) {
+      await new Promise(r => setTimeout(r, 4000));
+      const statusRes = await fetch(`https://cloud.leonardo.ai/api/v1/generations/${generationId}`, {
+        headers: { 'Authorization': `Bearer ${leoKey}` }
+      });
+      const statusData = await statusRes.json();
+      const generations = statusData.generations_by_pk;
+      if (generations && generations.status === 'COMPLETE' && generations.generated_images?.length > 0) {
+        imageUrl = generations.generated_images[0].url;
+        break;
+      }
+    }
+
+    if (!imageUrl) {
+      return res.status(500).json({ error: 'Leonardo generation timeout', generation_id: generationId });
+    }
+
+    // 3. Download image
+    const dir = path.join(PROJECTS_DIR, project_id, 'assets');
+    await fs.mkdir(dir, { recursive: true });
+    const coverPath = path.join(dir, 'cover.png');
+
+    const imgRes = await fetch(imageUrl);
+    if (!imgRes.ok) throw new Error('Failed to download image');
+    const buffer = await imgRes.arrayBuffer();
+    await fs.writeFile(coverPath, Buffer.from(buffer));
+
+    // 4. Update metadata
+    const metaPath = path.join(PROJECTS_DIR, project_id, 'metadata.json');
+    let metadata = {};
+    try {
+      metadata = JSON.parse(await fs.readFile(metaPath, 'utf8'));
+    } catch (e) {}
+    metadata.assets = metadata.assets || {};
+    metadata.assets.cover = 'assets/cover.png';
+    metadata.assets.cover_url = imageUrl;
+    await fs.writeFile(metaPath, JSON.stringify(metadata, null, 2));
+
+    res.json({ status: 'completed', path: 'assets/cover.png', generation_id: generationId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Automaton API running on port ${PORT}`);
 });
