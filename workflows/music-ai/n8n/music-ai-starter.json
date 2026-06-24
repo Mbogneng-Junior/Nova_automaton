@@ -28,24 +28,12 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "=https://api.automaton.neurenova.tech/ai/generate",
-        "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "usingJson",
-        "body": {
-          "provider": "={{ $json.provider }}",
-          "prompt": "={{ $json.prompt }}",
-          "model": "={{ $json.provider === 'openai' ? 'gpt-4o-mini' : $json.provider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : $json.provider === 'mistral' ? 'mistral-medium-latest' : 'deepseek-chat' }}",
-          "temperature": 0.8,
-          "max_tokens": 1024
-        },
-        "options": {}
+        "jsCode": "const input = $input.first().json;\nconst model = input.provider === 'openai' ? 'gpt-4o-mini' : input.provider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : input.provider === 'mistral' ? 'mistral-medium-latest' : 'deepseek-chat';\nconst response = await fetch('https://api.automaton.neurenova.tech/ai/generate', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    provider: input.provider,\n    prompt: input.prompt,\n    model: model,\n    temperature: 0.8,\n    max_tokens: 1024\n  })\n});\nconst data = await response.json();\nreturn { json: data };"
       },
       "id": "3",
       "name": "AI Generate",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [650, 300]
     },
     {
@@ -60,41 +48,22 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "=https://api.automaton.neurenova.tech/projects/{{ $json.projectId }}",
-        "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "usingJson",
-        "body": "={{ JSON.stringify($json.metadata) }}",
-        "options": {}
+        "jsCode": "const input = $input.first().json;\nconst projectId = input.projectId;\nconst metadata = input.metadata;\nconst response = await fetch('https://api.automaton.neurenova.tech/projects/' + projectId, {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify(metadata)\n});\nconst data = await response.json();\nreturn { json: { ...data, projectId } };"
       },
       "id": "5",
       "name": "Store Project",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [1050, 300]
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "=https://api.automaton.neurenova.tech/jobs/ffmpeg",
-        "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "usingJson",
-        "body": {
-          "project_id": "={{ $json.projectId }}",
-          "task": "render_long",
-          "schema": "music_ai",
-          "cover_path": "assets/cover.png",
-          "audio_path": "assets/audio.mp3",
-          "output_path": "outputs/video_long.mp4"
-        },
-        "options": {}
+        "jsCode": "const input = $input.first().json;\nconst projectId = input.projectId;\nconst response = await fetch('https://api.automaton.neurenova.tech/jobs/ffmpeg', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    project_id: projectId,\n    task: 'render_long',\n    schema: 'music_ai',\n    cover_path: 'assets/cover.png',\n    audio_path: 'assets/audio.mp3',\n    output_path: 'outputs/video_long.mp4'\n  })\n});\nconst data = await response.json();\nreturn { json: { ...data, projectId } };"
       },
       "id": "6",
       "name": "Queue FFmpeg",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [1250, 300]
     },
     {
