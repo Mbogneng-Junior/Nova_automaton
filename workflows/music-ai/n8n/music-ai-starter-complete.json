@@ -34,16 +34,8 @@
         "url": "https://api.automaton.neurenova.tech/ai/generate",
         "sendBody": true,
         "contentType": "json",
-        "specifyBody": "usingFieldsBelow",
-        "bodyParameters": {
-          "parameters": [
-            { "name": "provider", "value": "={{ $json.provider }}" },
-            { "name": "prompt", "value": "={{ $json.prompt }}" },
-            { "name": "model", "value": "={{ $json.model }}" },
-            { "name": "temperature", "value": "0.8" },
-            { "name": "max_tokens", "value": "1024" }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "={\"provider\":\"{{ $json.provider }}\",\"prompt\":\"{{ $json.prompt }}\",\"model\":\"{{ $json.model }}\",\"temperature\":0.8,\"max_tokens\":1024}",
         "options": {}
       },
       "id": "3",
@@ -54,7 +46,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const aiResponse = items[0].json;\nconst createMetadata = $('Create Metadata').all()[0].json;\nconst aiText = aiResponse.text;\nconst projectId = createMetadata.projectId;\nconst provider = createMetadata.provider;\nconst metadata = createMetadata.metadata;\nlet concept = {};\ntry {\n  concept = JSON.parse(aiText);\n} catch (e) {\n  concept = { raw: aiText };\n}\nmetadata.concept = concept;\nmetadata.concept.provider = provider;\nreturn [{ json: { projectId, metadata } }];",
+        "jsCode": "const aiResponse = items[0].json;\nconst createMetadata = $('Create Metadata').all()[0].json;\nconst aiText = aiResponse.text;\nconst projectId = createMetadata.projectId;\nconst provider = createMetadata.provider;\nconst metadata = createMetadata.metadata;\nlet concept = {};\ntry {\n  concept = JSON.parse(aiText);\n} catch (e) {\n  concept = { raw: aiText };\n}\nmetadata.concept = concept;\nmetadata.concept.provider = provider;\nreturn [{ json: { projectId, metadata, metadataJson: JSON.stringify(metadata) } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "4",
@@ -70,7 +62,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.metadata) }}",
+        "jsonBody": "={{ $json.metadataJson }}",
         "options": {}
       },
       "id": "5",
@@ -85,17 +77,8 @@
         "url": "https://api.automaton.neurenova.tech/jobs/ffmpeg",
         "sendBody": true,
         "contentType": "json",
-        "specifyBody": "usingFieldsBelow",
-        "bodyParameters": {
-          "parameters": [
-            { "name": "project_id", "value": "={{ $json.projectId }}" },
-            { "name": "task", "value": "render_long" },
-            { "name": "schema", "value": "music_ai" },
-            { "name": "cover_path", "value": "assets/cover.png" },
-            { "name": "audio_path", "value": "assets/audio.mp3" },
-            { "name": "output_path", "value": "outputs/video_long.mp4" }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "={\"project_id\":\"{{ $json.projectId }}\",\"task\":\"render_long\",\"schema\":\"music_ai\",\"cover_path\":\"assets/cover.png\",\"audio_path\":\"assets/audio.mp3\",\"output_path\":\"outputs/video_long.mp4\"}",
         "options": {}
       },
       "id": "6",
