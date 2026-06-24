@@ -28,7 +28,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.{{ $env.DOMAIN }}/ai/generate",
+        "url": "=https://api.automaton.neurenova.tech/ai/generate",
         "sendBody": true,
         "contentType": "json",
         "body": {
@@ -59,7 +59,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.{{ $env.DOMAIN }}/projects/{{ $json.projectId }}",
+        "url": "=https://api.automaton.neurenova.tech/projects/{{ $json.projectId }}",
         "sendBody": true,
         "contentType": "json",
         "body": "={{ JSON.stringify($json.metadata) }}",
@@ -74,7 +74,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.{{ $env.DOMAIN }}/jobs/ffmpeg",
+        "url": "=https://api.automaton.neurenova.tech/jobs/ffmpeg",
         "sendBody": true,
         "contentType": "json",
         "body": {
