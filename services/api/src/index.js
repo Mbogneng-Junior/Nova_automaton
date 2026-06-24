@@ -228,6 +228,78 @@ app.post('/analytics/:schema/events', async (req, res) => {
   }
 });
 
+// Orchestration endpoint: AI generate + store project + queue render in one call
+app.post('/workflow/music-ai', async (req, res) => {
+  try {
+    const { title, genre, mood, provider } = req.body;
+    if (!provider) {
+      return res.status(400).json({ error: 'provider is required' });
+    }
+
+    // 1. Create metadata
+    const projectId = 'track_' + Date.now();
+    const selectedProvider = provider.toLowerCase();
+    const metadata = {
+      project_id: projectId,
+      provider: selectedProvider,
+      title: title || 'Untitled Track',
+      genre: genre || 'electronic',
+      mood: mood || 'epic',
+      concept: {},
+      assets: {},
+      timestamps: [],
+      uploads: {
+        youtube: false,
+        tiktok: false,
+        instagram: false
+      },
+      analytics: {},
+      created_at: new Date().toISOString()
+    };
+
+    // 2. Generate prompt
+    const prompt = `You are a music marketing expert. Create a detailed concept for a ${metadata.genre} track titled "${metadata.title}" with a ${metadata.mood} mood.\n\nReturn ONLY a JSON object with these keys:\nsuno_prompt: a detailed prompt for Suno AI to generate the track\nleonardo_prompt: a prompt for Leonardo AI to generate cover art\nyoutube_title: title for YouTube\nyoutube_description: description for YouTube (include hashtags)\ntiktok_caption: caption for TikTok (include hashtags)\ninstagram_caption: caption for Instagram (include hashtags)\nhook: the main viral hook of the song (1 sentence)\n`;
+
+    // 3. Call AI
+    const model = selectedProvider === 'openai' ? 'gpt-4o-mini' : selectedProvider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : selectedProvider === 'mistral' ? 'mistral-medium-latest' : 'deepseek-chat';
+    const generate = aiProviders[selectedProvider];
+    if (!generate) {
+      return res.status(400).json({ error: `Unknown provider: ${selectedProvider}` });
+    }
+    const aiText = await generate({ model, prompt, temperature: 0.8, max_tokens: 1024 });
+
+    // 4. Parse concept
+    let concept = {};
+    try {
+      concept = JSON.parse(aiText);
+    } catch (e) {
+      concept = { raw: aiText };
+    }
+    metadata.concept = concept;
+    metadata.concept.provider = selectedProvider;
+
+    // 5. Store project
+    const dir = path.join(PROJECTS_DIR, projectId);
+    await fs.mkdir(dir, { recursive: true });
+    const filePath = path.join(dir, 'metadata.json');
+    await fs.writeFile(filePath, JSON.stringify(metadata, null, 2), 'utf8');
+
+    // 6. Queue FFmpeg
+    await ffmpegQueue.add('render', {
+      project_id: projectId,
+      task: 'render_long',
+      schema: 'music_ai',
+      cover_path: 'assets/cover.png',
+      audio_path: 'assets/audio.mp3',
+      output_path: 'outputs/video_long.mp4'
+    }, { attempts: 3, backoff: 5000 });
+
+    res.json({ projectId, status: 'queued', provider: selectedProvider });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Automaton API running on port ${PORT}`);
 });
