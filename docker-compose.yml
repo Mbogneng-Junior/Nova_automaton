@@ -59,6 +59,9 @@ services:
       - WEBHOOK_URL=https://n8n.${DOMAIN}/
       - GENERIC_TIMEZONE=${TIMEZONE:-Europe/Paris}
       - TZ=${TIMEZONE:-Europe/Paris}
+      - GREEN_API_INSTANCE_ID=${GREEN_API_INSTANCE_ID}
+      - GREEN_API_TOKEN=${GREEN_API_TOKEN}
+      - GREEN_API_BASE_URL=${GREEN_API_BASE_URL}
     volumes:
       - ./data/n8n:/home/node/.n8n
       - ./projects:/home/node/projects

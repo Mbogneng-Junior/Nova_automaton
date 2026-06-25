@@ -300,6 +300,109 @@ app.post('/workflow/music-ai', async (req, res) => {
   }
 });
 
+// Generate concept only (interactive agent step 1)
+app.post('/ai/generate-concept', async (req, res) => {
+  try {
+    const { title, genre, mood, provider } = req.body;
+    if (!provider) {
+      return res.status(400).json({ error: 'provider is required' });
+    }
+
+    const projectId = 'track_' + Date.now();
+    const selectedProvider = provider.toLowerCase();
+    const metadata = {
+      project_id: projectId,
+      provider: selectedProvider,
+      title: title || 'Untitled Track',
+      genre: genre || 'electronic',
+      mood: mood || 'epic',
+      concept: {},
+      assets: {},
+      timestamps: [],
+      uploads: { youtube: false, tiktok: false, instagram: false },
+      analytics: {},
+      created_at: new Date().toISOString()
+    };
+
+    const prompt = `You are a music marketing expert. Create a detailed concept for a ${metadata.genre} track titled "${metadata.title}" with a ${metadata.mood} mood.\n\nReturn ONLY a JSON object with these keys:\nsuno_prompt: a detailed prompt for Suno AI to generate the track\nleonardo_prompt: a prompt for Leonardo AI to generate cover art\nyoutube_title: title for YouTube\nyoutube_description: description for YouTube (include hashtags)\ntiktok_caption: caption for TikTok (include hashtags)\ninstagram_caption: caption for Instagram (include hashtags)\nhook: the main viral hook of the song (1 sentence)\n`;
+
+    const model = selectedProvider === 'openai' ? 'gpt-4o-mini' : selectedProvider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : selectedProvider === 'mistral' ? 'mistral-medium-latest' : 'deepseek-chat';
+    const generate = aiProviders[selectedProvider];
+    if (!generate) {
+      return res.status(400).json({ error: `Unknown provider: ${selectedProvider}` });
+    }
+    const aiText = await generate({ model, prompt, temperature: 0.8, max_tokens: 1024 });
+
+    let concept = {};
+    try {
+      concept = JSON.parse(aiText);
+    } catch (e) {
+      concept = { raw: aiText };
+    }
+    metadata.concept = concept;
+    metadata.concept.provider = selectedProvider;
+
+    const dir = path.join(PROJECTS_DIR, projectId);
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, 'metadata.json'), JSON.stringify(metadata, null, 2), 'utf8');
+
+    res.json({ projectId, status: 'concept_generated', concept, metadata });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get project status and assets
+app.get('/projects/:id/status', async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const dir = path.join(PROJECTS_DIR, projectId);
+    const metaPath = path.join(dir, 'metadata.json');
+
+    let metadata = {};
+    try {
+      metadata = JSON.parse(await fs.readFile(metaPath, 'utf8'));
+    } catch (e) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const assetsDir = path.join(dir, 'assets');
+    const outputsDir = path.join(dir, 'outputs');
+    const audioPath = path.join(assetsDir, 'audio.mp3');
+    const coverPath = path.join(assetsDir, 'cover.png');
+    const videoPath = path.join(outputsDir, 'video_long.mp4');
+
+    let audioExists = false, coverExists = false, videoExists = false;
+    try {
+      await fs.access(audioPath);
+      audioExists = true;
+    } catch (e) {}
+    try {
+      await fs.access(coverPath);
+      coverExists = true;
+    } catch (e) {}
+    try {
+      await fs.access(videoPath);
+      videoExists = true;
+    } catch (e) {}
+
+    res.json({
+      projectId,
+      metadata,
+      assets: {
+        audio: audioExists ? metadata.assets?.audio || 'assets/audio.mp3' : null,
+        cover: coverExists ? metadata.assets?.cover || 'assets/cover.png' : null,
+        video: videoExists ? 'outputs/video_long.mp4' : null
+      },
+      ready_for_music: true,
+      ready_for_cover: audioExists,
+      ready_for_video: audioExists && coverExists
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Generate music with Suno AI
 app.post('/ai/generate-music', async (req, res) => {
   try {
