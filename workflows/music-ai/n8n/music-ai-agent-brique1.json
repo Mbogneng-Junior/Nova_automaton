@@ -69,7 +69,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const output = $('Music AI Agent').first().json.output || \"Desole, je n'ai pas compris.\";\nconst chatId = items[0].json.chatId;\nconst bodyJson = JSON.stringify({ chatId, message: output });\nreturn [{ json: { bodyJson, chatId } }];",
+        "jsCode": "const output = $('Music AI Agent').first().json.output || \"Desole, je n'ai pas compris.\";\nconst chatId = $('Parse Message').first().json.chatId;\nconst bodyJson = JSON.stringify({ chatId, message: output });\nreturn [{ json: { bodyJson, chatId } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "6",
