@@ -82,7 +82,7 @@
               "leftValue": "={{ $json.hasAllInfo }}",
               "rightValue": "true",
               "operator": {
-                "type": "boolean",
+                "type": "string",
                 "operation": "equals"
               }
             }
