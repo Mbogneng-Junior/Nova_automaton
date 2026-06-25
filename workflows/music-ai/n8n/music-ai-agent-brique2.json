@@ -115,7 +115,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const res = items[0].json;\nconst concept = res.concept || {};\nconst output = `Concept genere avec succes !\n\nTitre: ${res.metadata?.title || 'Untitled'}\nGenre: ${res.metadata?.genre || 'electronic'}\nMood: ${res.metadata?.mood || 'epic'}\n\nHook: ${concept.hook || 'N/A'}\n\nSuno Prompt: ${concept.suno_prompt || 'N/A'}\n\nLeonardo Prompt: ${concept.leonardo_prompt || 'N/A'}\n\nYouTube: ${concept.youtube_title || 'N/A'}\nTikTok: ${concept.tiktok_caption || 'N/A'}\nInstagram: ${concept.instagram_caption || 'N/A'}\n\nProject ID: ${res.projectId || 'N/A'}\n\nDis-moi si tu valides (OK) ou si tu veux des modifications.`;\nreturn [{ json: { output } }];",
+        "jsCode": "const res = items[0].json;\nconst conceptRaw = res.concept?.raw || res.concept || '';\nlet concept = {};\ntry {\n  const jsonMatch = conceptRaw.match(/\\`\\`\\`json\\s*([\\s\\S]*?)\\s*\\`\\`\\`/);\n  const jsonStr = jsonMatch ? jsonMatch[1] : conceptRaw;\n  concept = JSON.parse(jsonStr);\n} catch (e) {\n  concept = { raw: conceptRaw };\n}\nconst output = `Concept genere avec succes !\n\nTitre: ${res.metadata?.title || 'Untitled'}\nGenre: ${res.metadata?.genre || 'electronic'}\nMood: ${res.metadata?.mood || 'epic'}\n\nHook: ${concept.hook || 'N/A'}\n\nSuno Prompt: ${concept.suno_prompt || 'N/A'}\n\nLeonardo Prompt: ${concept.leonardo_prompt || 'N/A'}\n\nYouTube: ${concept.youtube_title || 'N/A'}\nTikTok: ${concept.tiktok_caption || 'N/A'}\nInstagram: ${concept.instagram_caption || 'N/A'}\n\nProject ID: ${res.projectId || 'N/A'}\n\nDis-moi si tu valides (OK) ou si tu veux des modifications.`;\nreturn [{ json: { output } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "8",
