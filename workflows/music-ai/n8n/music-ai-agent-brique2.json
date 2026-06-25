@@ -79,7 +79,7 @@
           "conditions": [
             {
               "id": "cond1",
-              "leftValue": "={{ $json.hasAllInfo }}",
+              "leftValue": "={{ $('Parse Message').first().json.hasAllInfo }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
