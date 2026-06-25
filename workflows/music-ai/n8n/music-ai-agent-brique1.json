@@ -45,22 +45,14 @@
     },
     {
       "parameters": {
-        "options": {
-          "baseURL": "https://api.mistral.ai/v1"
-        },
+        "options": {},
         "model": "mistral-medium-latest"
       },
       "id": "4",
       "name": "Mistral LLM",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistral",
       "typeVersion": 1,
-      "position": [850, 500],
-      "credentials": {
-        "openAiApi": {
-          "id": "env_mistral",
-          "name": "Mistral via OpenAI Compatible"
-        }
-      }
+      "position": [850, 500]
     },
     {
       "parameters": {
