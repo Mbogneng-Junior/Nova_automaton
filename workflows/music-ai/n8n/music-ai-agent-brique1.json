@@ -1,5 +1,5 @@
 {
-  "name": "Music AI Agent — Brique 1 WhatsApp Dialogue",
+  "name": "Music AI Agent — Brique 2 Concept Generation",
   "id": "new",
   "meta": { "instanceId": "automaton-music-ai-agent" },
   "nodes": [
@@ -32,7 +32,7 @@
       "parameters": {
         "text": "={{ $json.textMessage }}\n",
         "options": {
-          "systemMessage": "Tu es un assistant de creation musicale IA. Tu aides l'utilisateur a creer des morceaux de musique originaux. Sois creatif, encourageant et precis.\n\nQuand l'utilisateur veut creer une musique :\n1. Demande-lui le genre musical, le mood et le titre souhaite.\n2. Une fois qu'il te donne ces infos, valide avec lui avant de passer a la generation.\n3. Dis-lui que tu vas generer un concept detaille et que tu lui enverras pour validation.\n4. A chaque etape, attends sa confirmation (OK, valide, oui) avant de continuer.\n\nReponds toujours en francais sauf si l'utilisateur demande autrement. Sois concis et amical."
+          "systemMessage": "Tu es un assistant de creation musicale IA. Tu aides l'utilisateur a creer des morceaux de musique originaux. Sois creatif, encourageant et precis.\n\nQuand l'utilisateur veut creer une musique :\n1. Demande-lui le genre musical, le mood et le titre souhaite.\n2. Une fois qu'il te donne ces infos, utilise l'outil 'generate_concept' pour generer le concept.\n3. Monte le concept a l'utilisateur et attends sa confirmation (OK, valide, oui) avant de continuer.\n4. Si l'utilisateur dit 'modifie' ou 'recommence', genere un nouveau concept.\n\nPour utiliser l'outil generate_concept, passe les infos sous ce format exact : title:NOM, genre:GENRE, mood:MOOD\n\nReponds toujours en francais sauf si l'utilisateur demande autrement. Sois concis et amical."
         },
         "promptType": "define",
         "hasOutputParser": false
@@ -105,6 +105,18 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "name": "generate_concept",
+        "description": "Generate a detailed music concept with title, genre, mood. Input format: 'title:X, genre:Y, mood:Z'. Returns concept with suno_prompt, leonardo_prompt, youtube_title, tiktok_caption, instagram_caption, hook.",
+        "workflowId": "PLACEHOLDER_SELECT_AFTER_IMPORT"
+      },
+      "id": "9",
+      "name": "Generate Concept Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1,
+      "position": [850, 700]
     }
   ],
   "connections": {
@@ -180,6 +192,17 @@
           {
             "node": "Respond to Webhook",
             "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Concept Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Music AI Agent",
+            "type": "ai_tool",
             "index": 0
           }
         ]

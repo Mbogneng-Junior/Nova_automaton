@@ -1,0 +1,95 @@
+{
+  "name": "Tool: Generate Music Concept",
+  "id": "new",
+  "meta": { "instanceId": "automaton-music-ai-agent" },
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "1",
+      "name": "AI Agent Tool Trigger",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const query = items[0].json.query || '';\nconst match = query.match(/title:([^,]+),?\s*genre:([^,]+),?\s*mood:([^,]+)/i);\nconst title = match ? match[1].trim() : query;\nconst genre = match ? match[2].trim() : 'electronic';\nconst mood = match ? match[3].trim() : 'epic';\nconst bodyJson = JSON.stringify({ title, genre, mood, provider: 'mistral' });\nreturn [{ json: { bodyJson, title, genre, mood } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "2",
+      "name": "Prepare Concept Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.automaton.neurenova.tech/ai/generate-concept",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.bodyJson }}",
+        "options": {}
+      },
+      "id": "3",
+      "name": "Call Generate Concept API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = items[0].json;\nconst concept = res.concept || {};\nconst summary = `Concept genere avec succes!\n\nTitre: ${res.metadata?.title || 'Untitled'}\nGenre: ${res.metadata?.genre || 'electronic'}\nMood: ${res.metadata?.mood || 'epic'}\n\nHook: ${concept.hook || 'N/A'}\n\nSuno Prompt: ${concept.suno_prompt || 'N/A'}\n\nLeonardo Prompt: ${concept.leonardo_prompt || 'N/A'}\n\nYouTube: ${concept.youtube_title || 'N/A'}\nTikTok: ${concept.tiktok_caption || 'N/A'}\nInstagram: ${concept.instagram_caption || 'N/A'}\n\nProject ID: ${res.projectId || 'N/A'}`;\nreturn [{ json: { response: summary, projectId: res.projectId, concept } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "4",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "AI Agent Tool Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare Concept Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Concept Body": {
+      "main": [
+        [
+          {
+            "node": "Call Generate Concept API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Generate Concept API": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": []
+}
