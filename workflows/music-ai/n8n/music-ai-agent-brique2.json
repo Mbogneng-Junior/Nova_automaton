@@ -80,10 +80,11 @@
             {
               "id": "cond1",
               "leftValue": "={{ $json.hasAllInfo }}",
-              "rightValue": "true",
+              "rightValue": true,
               "operator": {
-                "type": "string",
-                "operation": "equals"
+                "type": "boolean",
+                "operation": "equals",
+                "rightType": "boolean"
               }
             }
           ],
