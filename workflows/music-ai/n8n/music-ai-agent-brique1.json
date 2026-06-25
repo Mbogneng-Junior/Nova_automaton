@@ -45,12 +45,14 @@
     },
     {
       "parameters": {
-        "options": {},
+        "options": {
+          "baseURL": "https://api.mistral.ai/v1"
+        },
         "model": "mistral-medium-latest"
       },
       "id": "4",
       "name": "Mistral LLM",
-      "type": "@n8n/n8n-nodes-langchain.lmChatMistral",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1,
       "position": [850, 500]
     },
