@@ -136,7 +136,7 @@
     },
     {
       "parameters": {
-        "mode": "mergeByPosition"
+        "mode": "append"
       },
       "id": "10",
       "name": "Merge",
