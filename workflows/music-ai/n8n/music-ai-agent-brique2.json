@@ -268,39 +268,6 @@
           "combinator": "and"
         }
       }
-    },
-    {
-      "id": "31",
-      "name": "Prepare Denial Body",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        850,
-        450
-      ],
-      "parameters": {
-        "jsCode": "const chatId = $('Parse Message').first().json.chatId;\nconst message = 'Accès refusé. Seuls les utilisateurs autorisés peuvent utiliser cet agent.';\nconst bodyJson = JSON.stringify({ chatId, message });\nreturn [{ json: { bodyJson, chatId, message } }];",
-        "mode": "runOnceForAllItems"
-      }
-    },
-    {
-      "id": "32",
-      "name": "Send Denial WhatsApp",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        1050,
-        450
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $env.GREEN_API_BASE_URL }}/waInstance{{ $env.GREEN_API_INSTANCE_ID }}/sendMessage/{{ $env.GREEN_API_TOKEN }}",
-        "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "json",
-        "jsonBody": "={{ $json.bodyJson }}",
-        "options": {}
-      }
     }
   ],
   "connections": {
@@ -463,24 +430,7 @@
             "index": 0
           }
         ],
-        [
-          {
-            "node": "Prepare Denial Body",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Denial Body": {
-      "main": [
-        [
-          {
-            "node": "Send Denial WhatsApp",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     }
   },
