@@ -24,7 +24,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = items[0].json.body || items[0].json;\nconst textMessage = body.messageData?.textMessageData?.textMessage || body.messageData?.extendedTextMessageData?.textMessage || '';\nconst chatId = body.senderData?.chatId || body.chatId || '';\nconst senderName = body.senderData?.senderName || body.senderData?.senderContactName || 'User';\n\nconst clean = (str) => str.replace(/[*_]/g, '').trim();\nconst genreMatch = textMessage.match(/genre[\\s:]+([\\w\\s]+?)(?=,|$)/i);\nconst moodMatch = textMessage.match(/mood[\\s:]+([\\w\\s]+?)(?=,|$)/i);\nconst titleMatch = textMessage.match(/title[\\s:]+(.+?)(?=,|$)/i) || textMessage.match(/titre[\\s:]+(.+?)(?=,|$)/i) || textMessage.match(/(?:appel[eé]e?|nomm[eé]e?|s'appelle|intitul[eé]e?)\\s+(.+?)(?=,|$)/i);\nconst genre = genreMatch ? clean(genreMatch[1]) : '';\nconst mood = moodMatch ? clean(moodMatch[1]) : '';\nconst title = titleMatch ? clean(titleMatch[1]) : '';\nconst hasAllInfo = !!(genre && mood && title);\n\nreturn [{ json: { textMessage, chatId, senderName, genre, mood, title, hasAllInfo } }];",
+        "jsCode": "const body = items[0].json.body || items[0].json;\nconst textMessage = body.messageData?.textMessageData?.textMessage || body.messageData?.extendedTextMessageData?.textMessage || '';\nconst chatId = body.senderData?.chatId || body.chatId || '';\nconst senderName = body.senderData?.senderName || body.senderData?.senderContactName || 'User';\n\n// Authorization check\nconst authorizedNumbers = ($env.AUTHORIZED_NUMBERS || '237676377369').split(',').map(n => n.trim());\nconst phoneNumber = chatId.replace(/@c\\.us$/, '').replace(/@g\\.us$/, '');\nconst authorized = authorizedNumbers.includes(phoneNumber);\n\nconst clean = (str) => str.replace(/[*_]/g, '').trim();\nconst genreMatch = textMessage.match(/genre[\\s:]+([\\w\\s]+?)(?=,|$)/i);\nconst moodMatch = textMessage.match(/mood[\\s:]+([\\w\\s]+?)(?=,|$)/i);\nconst titleMatch = textMessage.match(/title[\\s:]+(.+?)(?=,|$)/i) || textMessage.match(/titre[\\s:]+(.+?)(?=,|$)/i) || textMessage.match(/(?:appel[eé]e?|nomm[eé]e?|s'appelle|intitul[eé]e?)\\s+(.+?)(?=,|$)/i);\nconst genre = genreMatch ? clean(genreMatch[1]) : '';\nconst mood = moodMatch ? clean(moodMatch[1]) : '';\nconst title = titleMatch ? clean(titleMatch[1]) : '';\nconst hasAllInfo = !!(genre && mood && title);\n\nreturn [{ json: { textMessage, chatId, senderName, genre, mood, title, hasAllInfo, authorized, phoneNumber } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "2",
@@ -235,6 +235,72 @@
         "region": "us-east-1",
         "options": {}
       }
+    },
+    {
+      "id": "30",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond1",
+              "leftValue": "={{ $('Parse Message').first().json.authorized }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals",
+                "rightType": "boolean"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "31",
+      "name": "Prepare Denial Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        850,
+        450
+      ],
+      "parameters": {
+        "jsCode": "const chatId = $('Parse Message').first().json.chatId;\nconst message = 'Accès refusé. Seuls les utilisateurs autorisés peuvent utiliser cet agent.';\nconst bodyJson = JSON.stringify({ chatId, message });\nreturn [{ json: { bodyJson, chatId, message } }];",
+        "mode": "runOnceForAllItems"
+      }
+    },
+    {
+      "id": "32",
+      "name": "Send Denial WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1050,
+        450
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.GREEN_API_BASE_URL }}/waInstance{{ $env.GREEN_API_INSTANCE_ID }}/sendMessage/{{ $env.GREEN_API_TOKEN }}",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.bodyJson }}",
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -253,7 +319,7 @@
       "main": [
         [
           {
-            "node": "Music AI Agent",
+            "node": "Authorized?",
             "type": "main",
             "index": 0
           }
@@ -383,6 +449,35 @@
           {
             "node": "Music AI Agent",
             "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authorized?": {
+      "main": [
+        [
+          {
+            "node": "Music AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Denial Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Denial Body": {
+      "main": [
+        [
+          {
+            "node": "Send Denial WhatsApp",
+            "type": "main",
             "index": 0
           }
         ]
