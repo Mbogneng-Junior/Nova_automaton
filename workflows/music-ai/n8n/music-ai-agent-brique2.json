@@ -1,7 +1,9 @@
 {
   "name": "Music AI Agent — Brique 2 Concept Generation",
   "id": "new",
-  "meta": { "instanceId": "automaton-music-ai-agent" },
+  "meta": {
+    "instanceId": "automaton-music-ai-agent"
+  },
   "nodes": [
     {
       "parameters": {
@@ -14,7 +16,10 @@
       "name": "Green API Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "webhookId": "green-api-music-agent"
     },
     {
@@ -26,7 +31,10 @@
       "name": "Parse Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [450, 300]
+      "position": [
+        450,
+        300
+      ]
     },
     {
       "parameters": {
@@ -41,20 +49,25 @@
       "name": "Music AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
-      "position": [650, 300]
+      "position": [
+        650,
+        300
+      ]
     },
     {
       "parameters": {
-        "options": {
-          "baseURL": "https://api.mistral.ai/v1"
-        },
-        "model": "mistral-medium-latest"
+        "model": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        "region": "us-east-1",
+        "options": {}
       },
       "id": "4",
-      "name": "Mistral LLM",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "name": "Agent Bedrock Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAwsBedrock",
       "typeVersion": 1,
-      "position": [650, 500]
+      "position": [
+        650,
+        500
+      ]
     },
     {
       "parameters": {
@@ -65,7 +78,10 @@
       "name": "Conversation Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
-      "position": [850, 500]
+      "position": [
+        850,
+        500
+      ]
     },
     {
       "parameters": {
@@ -95,34 +111,24 @@
       "name": "Has All Info?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [850, 300]
+      "position": [
+        850,
+        300
+      ]
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "=https://api.automaton.neurenova.tech/ai/generate-concept",
-        "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ title: $('Parse Message').first().json.title, genre: $('Parse Message').first().json.genre, mood: $('Parse Message').first().json.mood, provider: 'mistral' }) }}",
-        "options": {}
-      },
-      "id": "7",
-      "name": "Call Generate Concept API",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [1050, 200]
-    },
-    {
-      "parameters": {
-        "jsCode": "const res = items[0].json;\nconst conceptRaw = res.concept?.raw || res.concept || '';\nlet concept = {};\ntry {\n  const jsonMatch = conceptRaw.match(/\\`\\`\\`json\\s*([\\s\\S]*?)\\s*\\`\\`\\`/);\n  const jsonStr = jsonMatch ? jsonMatch[1] : conceptRaw;\n  concept = JSON.parse(jsonStr);\n} catch (e) {\n  concept = { raw: conceptRaw };\n}\nconst output = `Concept genere avec succes !\n\nTitre: ${res.metadata?.title || 'Untitled'}\nGenre: ${res.metadata?.genre || 'electronic'}\nMood: ${res.metadata?.mood || 'epic'}\n\nHook: ${concept.hook || 'N/A'}\n\nSuno Prompt: ${concept.suno_prompt || 'N/A'}\n\nLeonardo Prompt: ${concept.leonardo_prompt || 'N/A'}\n\nYouTube: ${concept.youtube_title || 'N/A'}\nTikTok: ${concept.tiktok_caption || 'N/A'}\nInstagram: ${concept.instagram_caption || 'N/A'}\n\nProject ID: ${res.projectId || 'N/A'}\n\nDis-moi si tu valides (OK) ou si tu veux des modifications.`;\nreturn [{ json: { output } }];",
+        "jsCode": "const llmOutput = items[0].json.output || items[0].json.text || '';\nlet concept = {};\ntry {\n  const jsonMatch = llmOutput.match(/\\`\\`\\`json\\s*([\\s\\S]*?)\\s*\\`\\`\\`/);\n  const jsonStr = jsonMatch ? jsonMatch[1] : llmOutput;\n  concept = JSON.parse(jsonStr);\n} catch (e) {\n  concept = { raw: llmOutput };\n}\nconst pm = $('Parse Message').first().json;\nconst output = `Concept genere avec succes !\n\nTitre: ${pm.title || 'Untitled'}\nGenre: ${pm.genre || 'electronic'}\nMood: ${pm.mood || 'epic'}\n\nHook: ${concept.hook || 'N/A'}\n\nSuno Prompt: ${concept.suno_prompt || 'N/A'}\n\nLeonardo Prompt: ${concept.leonardo_prompt || 'N/A'}\n\nYouTube: ${concept.youtube_title || 'N/A'}\nTikTok: ${concept.tiktok_caption || 'N/A'}\nInstagram: ${concept.instagram_caption || 'N/A'}\n\nDis-moi si tu valides (OK) ou si tu veux des modifications.`;\nreturn [{ json: { output } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "8",
       "name": "Format Concept Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1250, 200]
+      "position": [
+        1250,
+        200
+      ]
     },
     {
       "parameters": {
@@ -133,7 +139,10 @@
       "name": "Format Agent Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1050, 400]
+      "position": [
+        1050,
+        400
+      ]
     },
     {
       "parameters": {
@@ -143,7 +152,10 @@
       "name": "Merge",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
-      "position": [1450, 300]
+      "position": [
+        1450,
+        300
+      ]
     },
     {
       "parameters": {
@@ -154,7 +166,10 @@
       "name": "Prepare WhatsApp Body",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1650, 300]
+      "position": [
+        1650,
+        300
+      ]
     },
     {
       "parameters": {
@@ -170,7 +185,10 @@
       "name": "Send WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1850, 300]
+      "position": [
+        1850,
+        300
+      ]
     },
     {
       "parameters": {
@@ -182,7 +200,41 @@
       "name": "Respond to Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [2050, 300]
+      "position": [
+        2050,
+        300
+      ]
+    },
+    {
+      "id": "20",
+      "name": "Generate Concept LLM",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1050,
+        200
+      ],
+      "parameters": {
+        "text": "Tu es un expert en creation musicale IA. Genere un concept detaille pour un morceau de musique.\n\nInformations:\n- Titre: {{ $('Parse Message').first().json.title }}\n- Genre: {{ $('Parse Message').first().json.genre }}\n- Mood: {{ $('Parse Message').first().json.mood }}\n\nTu dois retourner UNIQUEMENT un objet JSON valide avec cette structure exacte:\n{\n  \"suno_prompt\": \"prompt detaille pour Suno AI (en anglais)\",\n  \"leonardo_prompt\": \"prompt pour Leonardo AI cover art (en anglais)\",\n  \"youtube_title\": \"titre pour YouTube\",\n  \"youtube_description\": \"description pour YouTube avec hashtags\",\n  \"tiktok_caption\": \"caption TikTok avec hashtags\",\n  \"instagram_caption\": \"caption Instagram avec hashtags\",\n  \"hook\": \"phrase accrocheuse du morceau (1 phrase)\"\n}\n\nRegles:\n- Le suno_prompt doit etre en anglais, detaille, avec style musical, structure, BPM, instruments, mood\n- Le leonardo_prompt doit etre en anglais, detaille, visuel, avec style artistique\n- Les captions doivent etre en francais\n- Le hook doit etre court et memorable\n- Ne retourne RIEN d'autre que le JSON, pas de markdown, pas d'explications",
+        "batching": {},
+        "promptType": "define",
+        "hasOutputParser": false
+      }
+    },
+    {
+      "id": "21",
+      "name": "Concept Bedrock Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAwsBedrock",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        50
+      ],
+      "parameters": {
+        "model": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        "region": "us-east-1",
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -203,17 +255,6 @@
           {
             "node": "Music AI Agent",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Mistral LLM": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Music AI Agent",
-            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -245,7 +286,7 @@
       "main": [
         [
           {
-            "node": "Call Generate Concept API",
+            "node": "Generate Concept LLM",
             "type": "main",
             "index": 0
           }
@@ -253,17 +294,6 @@
         [
           {
             "node": "Format Agent Response",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Call Generate Concept API": {
-      "main": [
-        [
-          {
-            "node": "Format Concept Response",
             "type": "main",
             "index": 0
           }
@@ -320,6 +350,39 @@
           {
             "node": "Respond to Webhook",
             "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Concept LLM": {
+      "main": [
+        [
+          {
+            "node": "Format Concept Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Concept Bedrock Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Concept LLM",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Bedrock Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Music AI Agent",
+            "type": "ai_languageModel",
             "index": 0
           }
         ]
