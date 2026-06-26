@@ -174,7 +174,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.GREEN_API_BASE_URL }}/waInstance{{ $env.GREEN_API_INSTANCE_ID }}/sendMessage/{{ $env.GREEN_API_TOKEN }}",
+        "url": "={{ $env.GREEN_API_1_BASE_URL }}/waInstance{{ $env.GREEN_API_1_INSTANCE_ID }}/sendMessage/{{ $env.GREEN_API_1_TOKEN }}",
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
