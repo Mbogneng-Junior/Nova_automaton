@@ -24,7 +24,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = items[0].json.body || items[0].json;\nconst text = body.messageData?.textMessageData?.textMessage || '';\nconst chatId = body.senderData?.chatId || body.chatId || '';\nconst phone = chatId.replace(/@c\\.us$/, '').replace(/@g\\.us$/, '');\nconst authorized = '237676377369' === phone;\nconst lower = text.toLowerCase().trim();\nconst isToggle = lower === 'bot on' || lower === 'bot off' || lower === '/bot on' || lower === '/bot off';\nconst activate = lower === 'bot on' || lower === '/bot on';\nreturn [{ json: { text, chatId, phone, authorized, isToggle, activate } }];",
+        "jsCode": "const body = items[0].json.body || items[0].json;\nconst text = body.messageData?.textMessageData?.textMessage || '';\nconst chatId = body.senderData?.chatId || body.chatId || '';\nconst phone = chatId.replace(/@c\\.us$/, '').replace(/@g\\.us$/, '');\nconst ownerPhone = ($env.AUTHORIZED_NUMBERS || '237676377369').split(',').map(n => n.trim())[0];\nconst authorized = ownerPhone === phone;\nconst lower = text.toLowerCase().trim();\nconst isToggle = lower === 'bot on' || lower === 'bot off' || lower === '/bot on' || lower === '/bot off';\nconst activate = lower === 'bot on' || lower === '/bot on';\nconst isOwnMessage = phone === ownerPhone;\nconst shouldProcess = !isOwnMessage || (isOwnMessage && isToggle);\nreturn [{ json: { text, chatId, phone, authorized, isToggle, activate, isOwnMessage, shouldProcess } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "2",
@@ -33,6 +33,39 @@
       "typeVersion": 2,
       "position": [
         450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('Parse').first().json.shouldProcess }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals",
+                "rightType": "boolean"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "15",
+      "name": "Process?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        650,
         300
       ]
     },
@@ -266,7 +299,7 @@
       "main": [
         [
           {
-            "node": "Toggle?",
+            "node": "Process?",
             "type": "main",
             "index": 0
           }
@@ -389,6 +422,18 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "Process?": {
+      "main": [
+        [
+          {
+            "node": "Toggle?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     }
   },
