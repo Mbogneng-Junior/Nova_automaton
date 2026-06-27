@@ -7,6 +7,8 @@ data/postgres/*
 data/n8n/*
 data/redis/*
 data/certbot/*
+data/hermes/*
+data/hermes-hci/*
 !data/**/.gitkeep
 
 # Projects generated assets
