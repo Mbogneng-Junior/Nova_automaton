@@ -208,7 +208,7 @@
     },
     {
       "parameters": {
-        "sessionKey": "={{ $json.phone }}",
+        "sessionKey": "chatbot-session",
         "sessionIdType": "customKey"
       },
       "id": "10",
