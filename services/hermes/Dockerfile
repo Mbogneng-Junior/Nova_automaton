@@ -54,7 +54,7 @@ RUN git clone --depth 1 https://github.com/NousResearch/hermes-agent.git ~/.herm
 # 3. Create venv + install Python deps
 RUN cd ~/.hermes/hermes-agent && \
     ~/.local/bin/uv python install 3.11 && \
-    ~/.local/bin/uv venv venv --python 3.11 && \
+    ~/.local/bin/uv venv .venv --python 3.11 && \
     ~/.local/bin/uv pip install -e ".[all]"
 
 # 4. Install Node deps for Hermes
@@ -62,7 +62,7 @@ RUN cd ~/.hermes/hermes-agent && npm install || true
 
 # 5. Create hermes symlink
 RUN mkdir -p ~/.local/bin && \
-    ln -sf ~/.hermes/hermes-agent/venv/bin/hermes ~/.local/bin/hermes
+    ln -sf ~/.hermes/hermes-agent/.venv/bin/hermes ~/.local/bin/hermes
 
 # 6. Verify hermes works
 RUN hermes --version || true
