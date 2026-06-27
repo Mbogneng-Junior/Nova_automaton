@@ -128,7 +128,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst active = staticData.chatbotActive === true ? true : false;\nreturn [{ json: { active } }];",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst active = staticData.chatbotActive === true ? true : false;\nconst parseData = $('Parse').first().json;\nreturn [{ json: { active, chatId: parseData.chatId, phone: parseData.phone } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "6",
@@ -208,7 +208,7 @@
     },
     {
       "parameters": {
-        "sessionKey": "={{ $('Parse').first().json.phone }}",
+        "sessionKey": "={{ $json.phone }}",
         "sessionIdType": "customKey"
       },
       "id": "10",
