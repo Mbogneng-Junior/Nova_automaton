@@ -53,7 +53,8 @@ RUN git clone --depth 1 https://github.com/NousResearch/hermes-agent.git ~/.herm
 
 # 3. Create venv + install Python deps
 RUN cd ~/.hermes/hermes-agent && \
-    ~/.local/bin/uv venv venv --python python3 && \
+    ~/.local/bin/uv python install 3.11 && \
+    ~/.local/bin/uv venv venv --python 3.11 && \
     ~/.local/bin/uv pip install -e ".[all]"
 
 # 4. Install Node deps for Hermes
