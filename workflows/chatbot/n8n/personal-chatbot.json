@@ -175,6 +175,20 @@
     },
     {
       "parameters": {
+        "jsCode": "const text = $('Parse').first().json.text;\nreturn [{ json: { text } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "15",
+      "name": "Prepare Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1150,
+        350
+      ]
+    },
+    {
+      "parameters": {
         "text": "={{ $('Parse').first().json.text }}",
         "options": {
           "systemMessage": "Tu es l'assistant personnel de ton createur. Quand il est occupe ou absent, tu reponds a ses messages WhatsApp a sa place. Sois poli, concis et utile. Dis que ton createur est indisponible mais que tu peux transmettre un message. Reponds en francais sauf demande contraire."
@@ -361,7 +375,7 @@
       "main": [
         [
           {
-            "node": "Chatbot Agent",
+            "node": "Prepare Input",
             "type": "main",
             "index": 0
           }
@@ -431,6 +445,17 @@
           {
             "node": "Chatbot Agent",
             "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Input": {
+      "main": [
+        [
+          {
+            "node": "Chatbot Agent",
+            "type": "main",
             "index": 0
           }
         ]
