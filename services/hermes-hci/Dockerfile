@@ -8,8 +8,8 @@ RUN apt-get update && apt-get install -y git ca-certificates python3 make g++ --
 # Clone HCI repository
 RUN git clone https://github.com/xaspx/hermes-control-interface.git .
 
-# Configure npm to use python3 for native modules
-RUN npm config set python /usr/bin/python3
+# Create symlink so node-gyp finds python3
+RUN ln -sf /usr/bin/python3 /usr/local/bin/python
 
 # Install dependencies and build
 RUN npm install && npm run build
