@@ -2,8 +2,8 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Install git for cloning
-RUN apt-get update && apt-get install -y git --no-install-recommends && rm -rf /var/lib/apt/lists/*
+# Install git + CA certificates for HTTPS cloning
+RUN apt-get update && apt-get install -y git ca-certificates --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 # Clone HCI repository
 RUN git clone https://github.com/xaspx/hermes-control-interface.git .
