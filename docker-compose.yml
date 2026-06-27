@@ -194,7 +194,7 @@ services:
     restart: unless-stopped
     environment:
       - PORT=10274
-      - HCI_PASSWORD=${HERMES_HCI_PASSWORD:-changeme}
+      - HERMES_CONTROL_PASSWORD=${HERMES_HCI_PASSWORD:-changeme}
       - HERMES_API_URL=http://hermes:8123
     volumes:
       - ./data/hermes-hci:/app/data
