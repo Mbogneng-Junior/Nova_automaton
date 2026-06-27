@@ -114,7 +114,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const fs = require('fs');\nconst path = '/home/node/chatbot_state.json';\nlet state = { active: false };\ntry { state = JSON.parse(fs.readFileSync(path, 'utf8')); } catch(e) {}\nconst activate = $('Parse').first().json.activate;\nstate.active = activate;\nstate.updatedAt = new Date().toISOString();\nfs.writeFileSync(path, JSON.stringify(state));\nconst msg = activate ? 'Chatbot active. Je reponds a ta place.' : 'Chatbot desactive. Tu reponds toi-meme.';\nreturn [{ json: { message: msg } }];",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst activate = $('Parse').first().json.activate;\nstaticData.chatbotActive = activate;\nconst msg = activate ? 'Chatbot active. Je reponds a ta place.' : 'Chatbot desactive. Tu reponds toi-meme.';\nreturn [{ json: { message: msg } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "5",
@@ -128,7 +128,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const fs = require('fs');\nconst path = '/home/node/chatbot_state.json';\nlet state = { active: false };\ntry { state = JSON.parse(fs.readFileSync(path, 'utf8')); } catch(e) {}\nreturn [{ json: { active: state.active } }];",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst active = staticData.chatbotActive === true ? true : false;\nreturn [{ json: { active } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "6",
