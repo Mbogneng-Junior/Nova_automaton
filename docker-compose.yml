@@ -65,6 +65,7 @@ services:
       - GREEN_API_2_INSTANCE_ID=${GREEN_API_2_INSTANCE_ID}
       - GREEN_API_2_TOKEN=${GREEN_API_2_TOKEN}
       - GREEN_API_2_BASE_URL=${GREEN_API_2_BASE_URL}
+      - AUTHORIZED_NUMBERS=${AUTHORIZED_NUMBERS:-237676377369,237657185475}
     volumes:
       - ./data/n8n:/home/node/.n8n
       - ./projects:/home/node/projects
