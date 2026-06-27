@@ -195,6 +195,7 @@ services:
     environment:
       - PORT=10274
       - HERMES_CONTROL_PASSWORD=${HERMES_HCI_PASSWORD:-changeme}
+      - HERMES_CONTROL_SECRET=${HERMES_HCI_SECRET:-automaton_secret_key_123}
       - HERMES_API_URL=http://hermes:8123
     volumes:
       - ./data/hermes-hci:/app/data
