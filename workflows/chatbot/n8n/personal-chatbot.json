@@ -24,7 +24,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = items[0].json.body || items[0].json;\nconst text = body.messageData?.textMessageData?.textMessage || '';\nconst sender = body.senderData?.sender || body.senderData?.chatId || body.chatId || '';\nconst chatId = body.senderData?.chatId || body.chatId || '';\nconst senderPhone = sender.replace(/@c\\.us$/, '').replace(/@g\\.us$/, '');\nconst phone = chatId.replace(/@c\\.us$/, '').replace(/@g\\.us$/, '');\nconst authorizedNumbers = ($env.CHATBOT_AUTHORIZED_NUMBERS || '237676377369,237657185475').split(',').map(n => n.trim());\nconst authorized = authorizedNumbers.includes(senderPhone);\nconst lower = text.toLowerCase().trim();\nconst isToggle = lower === 'bot on' || lower === 'bot off' || lower === '/bot on' || lower === '/bot off';\nconst activate = lower === 'bot on' || lower === '/bot on';\nconst chatbotPhone = authorizedNumbers[0];\nconst isOwnMessage = senderPhone === chatbotPhone;\nconst shouldProcess = !isOwnMessage || (isOwnMessage && isToggle);\nreturn [{ json: { text, chatId, phone, senderPhone, authorized, isToggle, activate, isOwnMessage, shouldProcess } }];",
+        "jsCode": "const body = items[0].json.body || items[0].json;\nconst text = body.messageData?.textMessageData?.textMessage || '';\nconst sender = body.senderData?.sender || body.senderData?.chatId || body.chatId || '';\nconst chatId = body.senderData?.chatId || body.chatId || '';\nconst senderPhone = sender.replace(/@c\\.us$/, '').replace(/@g\\.us$/, '');\nconst phone = chatId.replace(/@c\\.us$/, '').replace(/@g\\.us$/, '');\nconst authorizedNumbers = ($env.CHATBOT_AUTHORIZED_NUMBERS || '237676377369,237657185475').split(',').map(n => n.trim());\nconst authorized = authorizedNumbers.includes(senderPhone);\nconst lower = text.toLowerCase().trim();\nconst isToggle = lower === 'bot on' || lower === 'bot off' || lower === '/bot on' || lower === '/bot off';\nconst activate = lower === 'bot on' || lower === '/bot on';\n\n// Anti-loop: ignore bot API responses; allow toggles from phone\nconst webhookType = body.typeWebhook || '';\nconst isBotResponse = webhookType === 'outgoingAPIMessageReceived';\nconst isOutgoingFromPhone = webhookType === 'outgoingMessageReceived';\nconst shouldProcess = !isBotResponse && (!isOutgoingFromPhone || (isOutgoingFromPhone && isToggle));\n\nreturn [{ json: { text, chatId, phone, senderPhone, authorized, isToggle, activate, shouldProcess } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "2",
@@ -203,6 +203,20 @@
       "typeVersion": 1,
       "position": [
         1250,
+        550
+      ]
+    },
+    {
+      "parameters": {
+        "sessionKey": "chatbot-session",
+        "sessionIdType": "customKey"
+      },
+      "id": "10",
+      "name": "Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1450,
         550
       ]
     },
@@ -409,6 +423,17 @@
           }
         ],
         []
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Chatbot Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
       ]
     }
   },
