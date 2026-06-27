@@ -8,7 +8,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "green-api-chatbot",
+        "path": "green-api-chatbot-personal",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -20,7 +20,7 @@
         250,
         300
       ],
-      "webhookId": "green-api-chatbot"
+      "webhookId": "green-api-chatbot-personal"
     },
     {
       "parameters": {
