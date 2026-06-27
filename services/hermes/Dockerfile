@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV HERMES_HOME=/home/hermes/.hermes
-ENV PATH="/home/hermes/.local/bin:$PATH"
+ENV PATH="/home/hermes/.local/bin:/home/hermes/.hermes/node/bin:$PATH"
 
 # Install system dependencies for Hermes + Playwright/Chromium
 RUN apt-get update && apt-get install -y \
@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     ca-certificates \
     wget \
+    python3 \
+    python3-venv \
+    python3-pip \
     # Playwright/Chromium dependencies
     libnss3 \
     libnspr4 \
@@ -31,23 +34,40 @@ RUN apt-get update && apt-get install -y \
     libappindicator3-1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Node.js 22 as root (needed before switching user)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
 # Create hermes user
 RUN useradd -m -s /bin/bash hermes
 
 USER hermes
 WORKDIR /home/hermes
 
-# Install Hermes Agent (official installer)
-# The installer handles: uv, Python 3.11, Node.js v22, ripgrep, ffmpeg
-RUN curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+# 1. Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Ensure PATH includes hermes
-RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/hermes/.bashrc
+# 2. Clone Hermes repo
+RUN git clone --depth 1 https://github.com/NousResearch/hermes-agent.git ~/.hermes/hermes-agent
 
-# Expose Hermes gateway port
+# 3. Create venv + install Python deps
+RUN cd ~/.hermes/hermes-agent && \
+    ~/.local/bin/uv venv venv --python python3 && \
+    ~/.local/bin/uv pip install -e ".[all]"
+
+# 4. Install Node deps for Hermes
+RUN cd ~/.hermes/hermes-agent && npm install || true
+
+# 5. Create hermes symlink
+RUN mkdir -p ~/.local/bin && \
+    ln -sf ~/.hermes/hermes-agent/venv/bin/hermes ~/.local/bin/hermes
+
+# 6. Verify hermes works
+RUN hermes --version || true
+
 EXPOSE 8123
 
-# Copy entrypoint
 COPY --chown=hermes:hermes entrypoint.sh /home/hermes/entrypoint.sh
 RUN chmod +x /home/hermes/entrypoint.sh
 

@@ -1,10 +1,18 @@
 #!/bin/bash
 set -e
 
-export PATH="/home/hermes/.local/bin:$PATH"
+export PATH="/home/hermes/.local/bin:/home/hermes/.hermes/node/bin:$PATH"
+
+# Check if Hermes is properly installed
+if [ ! -f "$HOME/.local/bin/hermes" ]; then
+    echo "ERROR: Hermes binary not found at $HOME/.local/bin/hermes"
+    echo "The installation may have failed during Docker build."
+    tail -f /dev/null
+fi
 
 # If no config exists, print instructions and keep container alive for setup
-if [ ! -f "$HOME/.hermes/hermes-agent/.hermes/config.json" ]; then
+CONFIG_DIR="$HOME/.hermes/hermes-agent/.hermes"
+if [ ! -f "$CONFIG_DIR/config.json" ]; then
     echo "=========================================="
     echo "Hermes Agent - First Time Setup Required"
     echo "=========================================="
@@ -12,7 +20,6 @@ if [ ! -f "$HOME/.hermes/hermes-agent/.hermes/config.json" ]; then
     echo "Run interactively to configure:"
     echo "  docker exec -it automaton_hermes bash"
     echo "  hermes model"
-    echo "  hermes gateway"
     echo ""
     echo "Then restart this container."
     echo "Keeping container alive..."
@@ -31,7 +38,7 @@ if git fetch origin main &>/dev/null; then
         git reset --hard origin/main
         # Re-install dependencies if needed
         if [ -f "pyproject.toml" ]; then
-            uv pip install -e ".[all]" &>/dev/null || true
+            ~/.local/bin/uv pip install -e ".[all]" &>/dev/null || true
         fi
         echo "Update complete."
     else

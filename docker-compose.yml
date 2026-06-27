@@ -175,8 +175,6 @@ services:
       - HERMES_MODEL=${HERMES_MODEL:-}
       - HERMES_API_KEY=${HERMES_API_KEY:-}
       - HERMES_PORT=8123
-    volumes:
-      - ./data/hermes:/home/hermes/.hermes
     ports:
       - "127.0.0.1:8123:8123"
     networks:
