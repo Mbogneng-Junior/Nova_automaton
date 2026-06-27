@@ -24,7 +24,8 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = items[0].json.body || items[0].json;\nconst text = body.messageData?.textMessageData?.textMessage || '';\nconst sender = body.senderData?.sender || body.senderData?.chatId || body.chatId || '';\nconst chatId = body.senderData?.chatId || body.chatId || '';\nconst senderPhone = sender.replace(/@c\\.us$/, '').replace(/@g\\.us$/, '');\nconst phone = chatId.replace(/@c\\.us$/, '').replace(/@g\\.us$/, '');\nconst envNumbers = $env.CHATBOT_AUTHORIZED_NUMBERS || '';\nconst authorizedNumbers = envNumbers ? envNumbers.split(',').map(n => n.trim()) : [];\nconst authorized = authorizedNumbers.includes(senderPhone);\nconst lower = text.toLowerCase().trim();\nconst isToggle = lower === 'bot on' || lower === 'bot off' || lower === '/bot on' || lower === '/bot off';\nconst activate = lower === 'bot on' || lower === '/bot on';\n\n// Anti-loop: ignore bot API responses, status updates, and empty messages\nconst webhookType = body.typeWebhook || '';\nconst isBotResponse = webhookType === 'outgoingAPIMessageReceived';\nconst isStatusWebhook = webhookType === 'outgoingMessageStatus' || webhookType === 'stateInstanceChanged' || webhookType === 'statusInstanceChanged';\nconst isOutgoingFromPhone = webhookType === 'outgoingMessageReceived';\nconst hasText = text.length > 0;\nconst shouldProcess = !isBotResponse && !isStatusWebhook && hasText && (!isOutgoingFromPhone || (isOutgoingFromPhone && isToggle));\n\nreturn [{ json: { text, chatId, phone, senderPhone, authorized, isToggle, activate, shouldProcess } }];",
+        "jsCode": "const body = items[0].json.body || items[0].json;\nconst text = body.messageData?.textMessageData?.textMessage || '';\nconst sender = body.senderData?.sender || body.senderData?.chatId || body.chatId || '';\nconst chatId = body.senderData?.chatId || body.chatId || '';\nconst senderPhone = sender.replace(/@c\\.us$/, '').replace(/@g\\.us$/, '');\nconst phone = chatId.replace(/@c\\.us$/, '').replace(/@g\\.us$/, '');\nconst envNumbers = $env.CHATBOT_AUTHORIZED_NUMBERS || '';
+const authorizedNumbers = envNumbers ? envNumbers.split(',').map(n => n.trim()) : [];\nconst authorized = authorizedNumbers.includes(senderPhone);\nconst lower = text.toLowerCase().trim();\nconst isToggle = lower === 'bot on' || lower === 'bot off' || lower === '/bot on' || lower === '/bot off';\nconst activate = lower === 'bot on' || lower === '/bot on';\n\n// Anti-loop: ignore bot API responses; allow toggles from phone\nconst webhookType = body.typeWebhook || '';\nconst isBotResponse = webhookType === 'outgoingAPIMessageReceived';\nconst isOutgoingFromPhone = webhookType === 'outgoingMessageReceived';\nconst shouldProcess = !isBotResponse && (!isOutgoingFromPhone || (isOutgoingFromPhone && isToggle));\n\nreturn [{ json: { text, chatId, phone, senderPhone, authorized, isToggle, activate, shouldProcess } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "2",
@@ -222,26 +223,17 @@
     },
     {
       "parameters": {
-        "sessionKey": "={{ $('Parse').first().json.phone }}",
-        "tableName": "chatbot_memory",
-        "options": {
-          "contextWindowLength": 5
-        }
+        "sessionKey": "={{ $execution.id }}",
+        "sessionIdType": "customKey"
       },
       "id": "10",
       "name": "Memory",
-      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
-      "typeVersion": 1,
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
       "position": [
         1450,
         550
-      ],
-      "credentials": {
-        "postgres": {
-          "id": "credential-id",
-          "name": "Postgres Credential"
-        }
-      }
+      ]
     },
     {
       "parameters": {
