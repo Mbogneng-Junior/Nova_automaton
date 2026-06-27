@@ -208,7 +208,7 @@
     },
     {
       "parameters": {
-        "sessionKey": "chatbot-session",
+        "sessionKey": "={{ $execution.id }}",
         "sessionIdType": "customKey"
       },
       "id": "10",
