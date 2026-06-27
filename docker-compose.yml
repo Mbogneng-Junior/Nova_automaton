@@ -180,6 +180,8 @@ services:
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
     ports:
       - "127.0.0.1:8123:8123"
+    volumes:
+      - ./data/hermes-config:/home/hermes/.hermes/hermes-agent/.hermes
     networks:
       - automaton_network
     deploy:
