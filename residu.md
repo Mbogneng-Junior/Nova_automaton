@@ -30,3 +30,16 @@ docker compose restart hermes
 # 8. Accès
 # Dashboard : https://hermes.automaton.neurenova.tech
 # Gateway   : http://127.0.0.1:8123
+
+
+
+
+cd /home/automaton/automaton && git pull origin main
+docker compose rm -s -f hermes hermes-hci
+docker rmi automaton-hermes automaton-hermes-hci
+sudo rm -rf ./data/hermes
+docker compose build --no-cache hermes hermes-hci
+docker compose up -d hermes hermes-hci
+docker exec -it automaton_hermes bash
+hermes --version && hermes model && exit
+docker compose restart hermes
