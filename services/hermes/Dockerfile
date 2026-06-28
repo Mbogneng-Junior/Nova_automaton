@@ -2,7 +2,8 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV HERMES_HOME=/home/hermes/.hermes
-ENV PATH="/home/hermes/.local/bin:/home/hermes/.hermes/node/bin:$PATH"
+# /opt/hermes-agent is outside the volume mount, so the binary survives
+ENV PATH="/home/hermes/.local/bin:/opt/hermes-agent/.venv/bin:/opt/hermes-agent/node_modules/.bin:$PATH"
 
 # Install system dependencies for Hermes + Playwright/Chromium
 RUN apt-get update && apt-get install -y \
@@ -42,35 +43,38 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
 # Create hermes user
 RUN useradd -m -s /bin/bash hermes
 
+# Install hermes-agent to /opt/ (outside .hermes so volume mount won't overwrite it)
+RUN git clone --depth 1 https://github.com/NousResearch/hermes-agent.git /opt/hermes-agent && \
+    chown -R hermes:hermes /opt/hermes-agent
+
+# Install HCI to /opt/ as well
+RUN git clone https://github.com/xaspx/hermes-control-interface.git /opt/hci && \
+    chown -R hermes:hermes /opt/hci
+
 USER hermes
 WORKDIR /home/hermes
 
 # 1. Install uv
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 2. Clone Hermes repo
-RUN git clone --depth 1 https://github.com/NousResearch/hermes-agent.git ~/.hermes/hermes-agent
-
-# 3. Create venv + install Python deps
-RUN cd ~/.hermes/hermes-agent && \
+# 2. Create venv + install Python deps (in /opt/hermes-agent)
+RUN cd /opt/hermes-agent && \
     ~/.local/bin/uv python install 3.11 && \
     ~/.local/bin/uv venv .venv --python 3.11 && \
     ~/.local/bin/uv pip install -e ".[all]"
 
-# 4. Install Node deps for Hermes
-RUN cd ~/.hermes/hermes-agent && npm install || true
+# 3. Install Node deps for Hermes
+RUN cd /opt/hermes-agent && npm install || true
 
-# 5. Create hermes symlink
+# 4. Create hermes symlink in ~/.local/bin
 RUN mkdir -p ~/.local/bin && \
-    ln -sf ~/.hermes/hermes-agent/.venv/bin/hermes ~/.local/bin/hermes
+    ln -sf /opt/hermes-agent/.venv/bin/hermes ~/.local/bin/hermes
 
-# 6. Verify hermes works
+# 5. Verify hermes works
 RUN hermes --version || true
 
-# 7. Install hermes-control-interface
-RUN git clone https://github.com/xaspx/hermes-control-interface.git ~/.hermes/hci && \
-    cd ~/.hermes/hci && \
-    npm install && npm run build
+# 6. Install HCI npm deps
+RUN cd /opt/hci && npm install && npm run build
 
 EXPOSE 8123
 

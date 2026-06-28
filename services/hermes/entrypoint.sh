@@ -10,6 +10,11 @@ if [ ! -f "$HOME/.local/bin/hermes" ]; then
     tail -f /dev/null
 fi
 
+# Create .hermes dir + symlinks to /opt (survives volume mount overwriting .hermes)
+mkdir -p "$HOME/.hermes"
+[ -e "$HOME/.hermes/hermes-agent" ] || ln -sf /opt/hermes-agent "$HOME/.hermes/hermes-agent"
+[ -e "$HOME/.hermes/hci" ]          || ln -sf /opt/hci          "$HOME/.hermes/hci"
+
 # Start Hermes Control Interface in background (always, before any config check)
 echo "Starting Hermes Control Interface (HCI)..."
 export PORT=10274
