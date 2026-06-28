@@ -68,4 +68,4 @@ hermes config set GATEWAY_ALLOW_ALL_USERS true &>/dev/null || true
 
 # Start Hermes Gateway
 echo "Starting Hermes Gateway..."
-hermes gateway run
+hermes gateway
