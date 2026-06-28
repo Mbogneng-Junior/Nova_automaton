@@ -11,8 +11,8 @@ if [ ! -f "$HOME/.local/bin/hermes" ]; then
 fi
 
 # If no config exists, print instructions and keep container alive for setup
-CONFIG_DIR="$HOME/.hermes/hermes-agent/.hermes"
-if [ ! -f "$CONFIG_DIR/config.json" ]; then
+CONFIG_FILE="$HOME/.hermes/auth.json"
+if [ ! -f "$CONFIG_FILE" ]; then
     echo "=========================================="
     echo "Hermes Agent - First Time Setup Required"
     echo "=========================================="
