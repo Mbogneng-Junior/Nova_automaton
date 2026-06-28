@@ -10,7 +10,15 @@ if [ ! -f "$HOME/.local/bin/hermes" ]; then
     tail -f /dev/null
 fi
 
-# If no config exists, print instructions and keep container alive for setup
+# Start Hermes Control Interface in background (always, before any config check)
+echo "Starting Hermes Control Interface (HCI)..."
+export PORT=10274
+export HOST=0.0.0.0
+cd "$HOME/.hermes/hci"
+nohup node server.js > /tmp/hci.log 2>&1 &
+cd "$HOME"
+
+# If no config exists, print instructions but keep HCI alive for setup
 CONFIG_FILE="$HOME/.hermes/auth.json"
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "=========================================="
@@ -21,8 +29,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
     echo "  docker exec -it automaton_hermes bash"
     echo "  hermes model"
     echo ""
-    echo "Then restart this container."
-    echo "Keeping container alive..."
+    echo "HCI is running at port 10274 - waiting for hermes model config..."
     echo "=========================================="
     tail -f /dev/null
 fi
@@ -47,14 +54,6 @@ if git fetch origin main &>/dev/null; then
 else
     echo "Could not check for updates (offline?). Continuing with current version."
 fi
-
-# Start Hermes Control Interface in background
-echo "Starting Hermes Control Interface (HCI)..."
-cd "$HOME/.hermes/hci"
-# Make sure we use the same port HCI expects, though we might not need to if we pass PORT
-export PORT=10274
-export HOST=0.0.0.0
-nohup node server.js > hci.log 2>&1 &
 
 # Start Hermes Gateway
 echo "Starting Hermes Gateway..."
