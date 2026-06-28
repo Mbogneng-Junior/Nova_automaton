@@ -64,6 +64,7 @@ fi
 echo "Configuring Hermes API server..."
 hermes config set platforms.api_server.enabled true &>/dev/null || true
 hermes config set platforms.api_server.extra.port 8123 &>/dev/null || true
+hermes config set platforms.api_server.extra.api_server_key "hsk_default" &>/dev/null || true
 hermes config set GATEWAY_ALLOW_ALL_USERS true &>/dev/null || true
 
 # Start Hermes Gateway
