@@ -8,6 +8,8 @@ const cors = require('cors');
 const { Queue } = require('bullmq');
 const IORedis = require('ioredis');
 const { Pool } = require('pg');
+const { google } = require('googleapis');
+const { createReadStream } = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -105,6 +107,239 @@ const aiProviders = {
   deepseek: generateWithDeepSeek,
   mistral: generateWithMistral
 };
+
+// === Image generation providers (provider-agnostic) ===
+// Each provider returns { imageUrl, ref }. Download + metadata handled by generateAndStoreImage.
+
+async function generateImageLeonardo({ prompt, width, height }) {
+  const leoKey = process.env.LEONARDO_API_KEY;
+  if (!leoKey) throw new Error('LEONARDO_API_KEY not configured');
+  const genRes = await fetch('https://cloud.leonardo.ai/api/v1/generations', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${leoKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt,
+      modelId: process.env.LEONARDO_MODEL_ID || '6b645e2f-82f2-4b66-8f5e-c52983bda5e4',
+      width,
+      height,
+      num_images: 1
+    })
+  });
+  const genData = await genRes.json();
+  if (!genRes.ok) throw new Error(genData.error || 'Leonardo generation failed');
+  const generationId = genData.sdGenerationJob?.generationId;
+  if (!generationId) throw new Error('No generationId returned from Leonardo');
+  for (let i = 0; i < 15; i++) {
+    await new Promise(r => setTimeout(r, 4000));
+    const statusRes = await fetch(`https://cloud.leonardo.ai/api/v1/generations/${generationId}`, {
+      headers: { 'Authorization': `Bearer ${leoKey}` }
+    });
+    const statusData = await statusRes.json();
+    const generations = statusData.generations_by_pk;
+    if (generations && generations.status === 'COMPLETE' && generations.generated_images?.length > 0) {
+      return { imageUrl: generations.generated_images[0].url, ref: generationId };
+    }
+  }
+  throw new Error('Leonardo generation timeout');
+}
+
+async function generateImageOpenAI({ prompt, width, height }) {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) throw new Error('OPENAI_API_KEY not configured');
+  // DALL-E 3 supports a fixed set of sizes; pick by aspect ratio.
+  let size = '1024x1024';
+  if (width && height) {
+    if (width > height) size = '1792x1024';
+    else if (height > width) size = '1024x1792';
+  }
+  const res = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: process.env.OPENAI_IMAGE_MODEL || 'dall-e-3',
+      prompt,
+      n: 1,
+      size,
+      response_format: 'url'
+    })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || 'OpenAI image generation failed');
+  const imageUrl = data.data?.[0]?.url;
+  if (!imageUrl) throw new Error('No image URL returned from OpenAI');
+  return { imageUrl, ref: null };
+}
+
+const imageProviders = {
+  leonardo: generateImageLeonardo,
+  openai: generateImageOpenAI
+};
+
+// Providers activables via .env: IMAGE_PROVIDERS_ENABLED="leonardo,openai" (defaut: tous).
+function getEnabledImageProviders() {
+  const all = Object.keys(imageProviders);
+  const env = process.env.IMAGE_PROVIDERS_ENABLED;
+  if (!env) return all;
+  const list = env.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  const enabled = list.filter(p => all.includes(p));
+  return enabled.length ? enabled : all;
+}
+
+// Choisit le provider: param d'appel > IMAGE_PROVIDER (.env) > premier activé. Fallback si désactivé.
+function resolveImageProvider(requested) {
+  const enabled = getEnabledImageProviders();
+  const want = (requested || process.env.IMAGE_PROVIDER || enabled[0] || '').toLowerCase();
+  if (enabled.includes(want)) return want;
+  return enabled[0];
+}
+
+async function generateAndStoreImage({ project_id, prompt, width = 1024, height = 1024, provider, output_name = 'cover.png' }) {
+  const selected = resolveImageProvider(provider);
+  const generate = imageProviders[selected];
+  if (!generate) throw new Error(`No image provider available (requested: ${provider || 'default'})`);
+
+  const { imageUrl, ref } = await generate({ prompt, width, height });
+
+  const safeName = String(output_name).replace(/[^a-zA-Z0-9._-]/g, '_');
+  const dir = path.join(PROJECTS_DIR, project_id, 'assets');
+  await fs.mkdir(dir, { recursive: true });
+  const filePath = path.join(dir, safeName);
+
+  const imgRes = await fetch(imageUrl);
+  if (!imgRes.ok) throw new Error('Failed to download image');
+  const buffer = await imgRes.arrayBuffer();
+  await fs.writeFile(filePath, Buffer.from(buffer));
+
+  // Update metadata.assets[<name>] (ex: cover, thumbnail)
+  const metaPath = path.join(PROJECTS_DIR, project_id, 'metadata.json');
+  let metadata = {};
+  try { metadata = JSON.parse(await fs.readFile(metaPath, 'utf8')); } catch (e) {}
+  metadata.assets = metadata.assets || {};
+  const key = safeName.replace(/\.[^.]+$/, '');
+  metadata.assets[key] = `assets/${safeName}`;
+  metadata.assets[`${key}_url`] = imageUrl;
+  metadata.assets[`${key}_provider`] = selected;
+  await fs.writeFile(metaPath, JSON.stringify(metadata, null, 2));
+
+  return { provider: selected, path: `assets/${safeName}`, image_url: imageUrl, ref };
+}
+
+// === Publishing providers (multi-platform) ===
+// Chaque provider publie un fichier et retourne { id, url, raw }. Activation par .env.
+// Sécurité: dry_run par défaut (PUBLISH_DRY_RUN), rien ne part en ligne sans désactivation explicite.
+
+function getYouTubeClient() {
+  const { YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN } = process.env;
+  if (!YOUTUBE_CLIENT_ID || !YOUTUBE_CLIENT_SECRET || !YOUTUBE_REFRESH_TOKEN) {
+    throw new Error('YouTube OAuth not configured (YOUTUBE_CLIENT_ID / YOUTUBE_CLIENT_SECRET / YOUTUBE_REFRESH_TOKEN)');
+  }
+  const oauth2Client = new google.auth.OAuth2(YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET);
+  oauth2Client.setCredentials({ refresh_token: YOUTUBE_REFRESH_TOKEN });
+  return google.youtube({ version: 'v3', auth: oauth2Client });
+}
+
+async function publishYouTube({ filePath, title, description, tags, visibility }) {
+  const youtube = getYouTubeClient();
+  const stat = await fs.stat(filePath);
+  const res = await youtube.videos.insert({
+    part: 'snippet,status',
+    notifySubscribers: false,
+    requestBody: {
+      snippet: {
+        title: title || 'Untitled',
+        description: description || '',
+        tags: tags || []
+      },
+      status: {
+        privacyStatus: visibility || 'private',
+        selfDeclaredMadeForKids: false
+      }
+    },
+    media: {
+      body: createReadStream(filePath),
+      mimeType: 'video/*'
+    }
+  }, {
+    // Upload progress / retry config
+    onUploadProgress: (evt) => {
+      const pct = stat.size ? Math.round((evt.bytesRead / stat.size) * 100) : 0;
+      console.log(`YouTube upload progress: ${pct}%`);
+    }
+  });
+  const id = res.data.id;
+  return {
+    id,
+    url: `https://youtu.be/${id}`,
+    raw: { privacyStatus: res.data.status?.privacyStatus, status: res.data.status }
+  };
+}
+
+// Stubs prêts à recevoir l'implémentation réelle (OAuth à configurer).
+async function publishTikTok() {
+  throw new Error('TikTok publishing not implemented yet (OAuth + Content Posting API). Utilise dry_run en attendant.');
+}
+
+async function publishMeta() {
+  throw new Error('Meta (Facebook/Instagram) publishing not implemented yet (Graph API). Utilise dry_run en attendant.');
+}
+
+const publishProviders = {
+  youtube: publishYouTube,
+  tiktok: publishTikTok,
+  meta: publishMeta
+};
+
+function getEnabledPlatforms() {
+  const all = Object.keys(publishProviders);
+  const env = process.env.PUBLISH_PLATFORMS_ENABLED;
+  if (!env) return all;
+  const list = env.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  const enabled = list.filter(p => all.includes(p));
+  return enabled.length ? enabled : all;
+}
+
+async function publishContent({ platform, project_id, file_path, title, description, tags, visibility, channel_id, dry_run }) {
+  const plat = String(platform || '').toLowerCase();
+  if (!plat) throw new Error('platform is required');
+  if (!publishProviders[plat]) {
+    throw new Error(`Unknown platform: ${platform}. Supported: ${Object.keys(publishProviders).join(', ')}`);
+  }
+  if (!getEnabledPlatforms().includes(plat)) {
+    throw new Error(`Platform disabled: ${platform} (voir PUBLISH_PLATFORMS_ENABLED)`);
+  }
+
+  // dry_run: défaut global PUBLISH_DRY_RUN (true tant que non explicitement 'false'), override par appel.
+  const globalDry = (process.env.PUBLISH_DRY_RUN || 'true').toLowerCase() !== 'false';
+  const isDry = (dry_run === undefined || dry_run === null) ? globalDry : !!dry_run;
+
+  let result;
+  if (isDry) {
+    result = {
+      dry_run: true,
+      platform: plat,
+      channel_id: channel_id || null,
+      would_publish: { title: title || '', visibility: visibility || 'private', file_path }
+    };
+  } else {
+    const absPath = path.isAbsolute(file_path) ? file_path : path.join(PROJECTS_DIR, project_id || '', file_path);
+    const r = await publishProviders[plat]({ filePath: absPath, title, description, tags, visibility });
+    result = { dry_run: false, platform: plat, channel_id: channel_id || null, ...r };
+  }
+
+  // Met à jour metadata.uploads[platform] (non bloquant)
+  if (project_id) {
+    try {
+      const metaPath = path.join(PROJECTS_DIR, project_id, 'metadata.json');
+      let metadata = {};
+      try { metadata = JSON.parse(await fs.readFile(metaPath, 'utf8')); } catch (e) {}
+      metadata.uploads = metadata.uploads || {};
+      metadata.uploads[plat] = { ...result, at: new Date().toISOString() };
+      await fs.writeFile(metaPath, JSON.stringify(metadata, null, 2));
+    } catch (e) { /* ignore */ }
+  }
+
+  return result;
+}
 
 async function withSchema(schema, callback) {
   const client = await pgPool.connect();
@@ -569,6 +804,52 @@ app.post('/ai/generate-cover', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Provider-agnostic image generation (cover, thumbnail, ...). Choix du provider par appel ou via .env.
+app.post('/ai/generate-image', async (req, res) => {
+  try {
+    const { project_id, prompt, width, height, provider, output_name } = req.body;
+    if (!project_id || !prompt) {
+      return res.status(400).json({ error: 'project_id and prompt are required' });
+    }
+    const result = await generateAndStoreImage({ project_id, prompt, width, height, provider, output_name });
+    res.json({ status: 'completed', ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Liste les fournisseurs d'images supportés et ceux actuellement activés.
+app.get('/ai/image-providers', (req, res) => {
+  res.json({
+    supported: Object.keys(imageProviders),
+    enabled: getEnabledImageProviders(),
+    default: resolveImageProvider()
+  });
+});
+
+// Publication multi-plateforme. dry_run par défaut (voir PUBLISH_DRY_RUN).
+app.post('/publish', async (req, res) => {
+  try {
+    const { platform, project_id, file_path, title, description, tags, visibility, channel_id, dry_run } = req.body;
+    if (!platform || !file_path) {
+      return res.status(400).json({ error: 'platform and file_path are required' });
+    }
+    const result = await publishContent({ platform, project_id, file_path, title, description, tags, visibility, channel_id, dry_run });
+    res.json({ status: result.dry_run ? 'dry_run' : 'published', ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Liste les plateformes supportées/activées et le mode dry_run par défaut.
+app.get('/publish/platforms', (req, res) => {
+  res.json({
+    supported: Object.keys(publishProviders),
+    enabled: getEnabledPlatforms(),
+    dry_run_default: (process.env.PUBLISH_DRY_RUN || 'true').toLowerCase() !== 'false'
+  });
 });
 
 app.listen(PORT, () => {

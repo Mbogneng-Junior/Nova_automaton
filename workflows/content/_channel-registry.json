@@ -1,0 +1,86 @@
+{
+  "$schema": "./_channel-registry.schema.md",
+  "description": "Registre central de tous les canaux de diffusion. Ajouter une chaine = ajouter une entree ici, SANS modifier les pipelines. Chaque pipeline lit ce registre pour savoir ou publier et comment adapter le contenu (brand kit + adapter).",
+  "version": 1,
+  "channels": [
+    {
+      "id": "music-ai-youtube-fr",
+      "theme": "music-ai",
+      "platform": "youtube",
+      "language": "fr",
+      "status": "active",
+      "account_ref": "YT_MUSIC_FR",
+      "publish": {
+        "tool": "tool-publish-youtube",
+        "default_visibility": "private",
+        "requires_approval": true
+      },
+      "adapter": {
+        "format": "16:9",
+        "max_duration_sec": 600,
+        "title_style": "seo_long",
+        "hashtags": ["#musique", "#beat", "#typebeat"]
+      },
+      "brand_kit": {
+        "palette": ["#0a1f44", "#d4af37"],
+        "tone": "cinematique, afrofuturiste",
+        "intro": null,
+        "outro": null,
+        "watermark": null
+      }
+    },
+    {
+      "id": "music-ai-tiktok-fr",
+      "theme": "music-ai",
+      "platform": "tiktok",
+      "language": "fr",
+      "status": "active",
+      "account_ref": "TIKTOK_MUSIC_FR",
+      "publish": {
+        "tool": "tool-publish-tiktok",
+        "default_visibility": "draft",
+        "requires_approval": true
+      },
+      "adapter": {
+        "format": "9:16",
+        "max_duration_sec": 60,
+        "title_style": "hook_court",
+        "hashtags": ["#musique", "#fyp", "#beatmaker"]
+      },
+      "brand_kit": {
+        "palette": ["#0a1f44", "#d4af37"],
+        "tone": "hook punchy 3 premieres secondes",
+        "intro": null,
+        "outro": null,
+        "watermark": null
+      }
+    },
+    {
+      "id": "psychologie-youtube-fr",
+      "theme": "psychologie",
+      "platform": "youtube",
+      "language": "fr",
+      "status": "planned",
+      "account_ref": "YT_PSY_FR",
+      "publish": {
+        "tool": "tool-publish-youtube",
+        "default_visibility": "private",
+        "requires_approval": true
+      },
+      "adapter": {
+        "format": "16:9",
+        "max_duration_sec": 900,
+        "title_style": "seo_question",
+        "hashtags": ["#psychologie", "#developpementpersonnel"]
+      },
+      "brand_kit": {
+        "palette": ["#1b2a4a", "#e8c170"],
+        "tone": "posé, pédagogique, rassurant",
+        "intro": null,
+        "outro": null,
+        "watermark": null
+      }
+    }
+  ],
+  "account_refs_note": "account_ref est une CLE LOGIQUE. Les secrets reels (tokens OAuth, refresh tokens) restent dans .env ou dans les credentials n8n. Ne jamais mettre de secret dans ce fichier (il est versionne sur git)."
+}

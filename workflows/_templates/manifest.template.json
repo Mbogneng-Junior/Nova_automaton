@@ -1,0 +1,54 @@
+{
+  "$schema": "../CONVENTIONS.md",
+  "id": "nom-du-pipeline",
+  "theme": "music-ai | psychologie | ...",
+  "category": "content | personal | domains",
+  "description": "Une phrase: ce que fait ce pipeline.",
+  "status": "draft | active | deprecated",
+  "owner": "mbogneng-junior",
+  "version": 1,
+
+  "triggers": [
+    { "type": "webhook", "ref": "music-ai-starter", "note": "POST déclenché par n8n" },
+    { "type": "cron", "schedule": "0 8 * * *", "note": "exemple: tous les jours 8h" },
+    { "type": "whatsapp", "ref": "GREEN_API_1", "note": "agent conversationnel" }
+  ],
+
+  "uses_bricks": [
+    "tool-generate-concept",
+    "tool-generate-image",
+    "tool-render-video",
+    "tool-hitl-approval",
+    "tool-publish-youtube"
+  ],
+
+  "approval_gates": [
+    { "step": "concept", "channel": "whatsapp", "required": true },
+    { "step": "assets", "channel": "whatsapp", "required": true },
+    { "step": "publish", "channel": "whatsapp", "required": true }
+  ],
+
+  "channels": ["music-ai-youtube-fr", "music-ai-tiktok-fr"],
+
+  "services": {
+    "api_endpoints": ["/ai/generate-concept", "/workflow/music-ai"],
+    "queues": ["ffmpeg"],
+    "db_schema": "music_ai"
+  },
+
+  "env_required": [
+    "MISTRAL_API_KEY",
+    "SUNO_API_KEY",
+    "LEONARDO_API_KEY",
+    "GREEN_API_1_INSTANCE_ID",
+    "GREEN_API_1_TOKEN",
+    "MUSIC_AI_AUTHORIZED_NUMBERS"
+  ],
+
+  "files": {
+    "n8n": "n8n/*.json",
+    "prompts": "prompts/*.md",
+    "templates": "templates/*.json",
+    "tests": "TESTING.md"
+  }
+}

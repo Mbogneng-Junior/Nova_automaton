@@ -1,0 +1,78 @@
+{
+  "name": "Tool: Generate Image (multi-provider)",
+  "id": "shared-generate-image",
+  "meta": { "instanceId": "automaton-shared" },
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "project_id", "type": "string" },
+            { "name": "prompt", "type": "string" },
+            { "name": "provider", "type": "string" },
+            { "name": "output_name", "type": "string" },
+            { "name": "width", "type": "number" },
+            { "name": "height", "type": "number" }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const i = items[0].json;\nif (!i.project_id || !i.prompt) { throw new Error('project_id and prompt are required'); }\nconst body = {\n  project_id: i.project_id,\n  prompt: i.prompt,\n  output_name: i.output_name || 'cover.png',\n  width: Number(i.width) || 1024,\n  height: Number(i.height) || 1024\n};\n// provider optionnel: si vide, l'API utilise IMAGE_PROVIDER (.env)\nif (i.provider) { body.provider = String(i.provider).toLowerCase(); }\nconst bodyJson = JSON.stringify(body);\nreturn [{ json: { bodyJson, project_id: i.project_id, output_name: body.output_name } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "2",
+      "name": "Build Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/ai/generate-image",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.bodyJson }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "3",
+      "name": "Call Generate Image API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = items[0].json || {};\nreturn [{ json: {\n  status: r.status || 'error',\n  provider: r.provider || null,\n  path: r.path || null,\n  image_url: r.image_url || null,\n  project_id: $('Build Body').first().json.project_id\n} }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "4",
+      "name": "Format Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [[{ "node": "Build Body", "type": "main", "index": 0 }]]
+    },
+    "Build Body": {
+      "main": [[{ "node": "Call Generate Image API", "type": "main", "index": 0 }]]
+    },
+    "Call Generate Image API": {
+      "main": [[{ "node": "Format Result", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": []
+}

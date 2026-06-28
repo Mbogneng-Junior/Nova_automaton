@@ -1,0 +1,117 @@
+{
+  "name": "Tool: HITL Approval (WhatsApp)",
+  "id": "shared-hitl-approval",
+  "meta": { "instanceId": "automaton-shared" },
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "chat_id", "type": "string" },
+            { "name": "instance", "type": "string" },
+            { "name": "project_id", "type": "string" },
+            { "name": "theme", "type": "string" },
+            { "name": "step", "type": "string" },
+            { "name": "title", "type": "string" },
+            { "name": "body", "type": "string" },
+            { "name": "options", "type": "string" }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const i = items[0].json;\nconst chatId = i.chat_id;\nconst inst = String(i.instance || '1') === '2' ? '2' : '1';\nconst baseUrl = inst === '2' ? $env.GREEN_API_2_BASE_URL : $env.GREEN_API_1_BASE_URL;\nconst instanceId = inst === '2' ? $env.GREEN_API_2_INSTANCE_ID : $env.GREEN_API_1_INSTANCE_ID;\nconst token = inst === '2' ? $env.GREEN_API_2_TOKEN : $env.GREEN_API_1_TOKEN;\nconst sendUrl = `${baseUrl}/waInstance${instanceId}/sendMessage/${token}`;\n\nconst title = i.title || 'Validation requise';\nconst bodyText = i.body || '';\nconst opts = i.options || 'Reponds: OUI pour valider, NON pour annuler, ou ecris tes corrections.';\nconst message = `*${title}*\\n\\n${bodyText}\\n\\n_${opts}_`;\nconst bodyJson = JSON.stringify({ chatId, message });\n\nconst resumeUrl = $execution.resumeUrl;\n\nconst esc = (s) => String(s == null ? '' : s).replace(/'/g, \"''\");\nconst payload = JSON.stringify({ title, body: bodyText, step: i.step, project_id: i.project_id });\nconst sql = `INSERT INTO shared.hitl_approvals (chat_id, instance, project_id, theme, step, status, resume_url, payload) VALUES ('${esc(chatId)}', '${esc(inst)}', '${esc(i.project_id)}', '${esc(i.theme)}', '${esc(i.step)}', 'pending', '${esc(resumeUrl)}', '${esc(payload)}'::jsonb) RETURNING id;`;\n\nreturn [{ json: { chatId, sendUrl, bodyJson, message, resumeUrl, sql, project_id: i.project_id, step: i.step } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "2",
+      "name": "Compose",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.sendUrl }}",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.bodyJson }}",
+        "options": {}
+      },
+      "id": "3",
+      "name": "Send WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $('Compose').first().json.sql }}",
+        "options": {}
+      },
+      "id": "4",
+      "name": "Store Pending",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [850, 300],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_POSTGRES_CRED_ID",
+          "name": "Postgres Automaton"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "options": {}
+      },
+      "id": "5",
+      "name": "Wait For Reply",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1050, 300],
+      "webhookId": "hitl-approval-resume"
+    },
+    {
+      "parameters": {
+        "jsCode": "const j = items[0].json || {};\nconst data = j.body || j;\nconst decision = String(data.decision || 'approved').toLowerCase();\nconst feedback = data.feedback || '';\nreturn [{ json: { decision, feedback, approved: decision === 'approved' } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "6",
+      "name": "Normalize Decision",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [[{ "node": "Compose", "type": "main", "index": 0 }]]
+    },
+    "Compose": {
+      "main": [[{ "node": "Send WhatsApp", "type": "main", "index": 0 }]]
+    },
+    "Send WhatsApp": {
+      "main": [[{ "node": "Store Pending", "type": "main", "index": 0 }]]
+    },
+    "Store Pending": {
+      "main": [[{ "node": "Wait For Reply", "type": "main", "index": 0 }]]
+    },
+    "Wait For Reply": {
+      "main": [[{ "node": "Normalize Decision", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": []
+}

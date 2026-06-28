@@ -1,0 +1,82 @@
+{
+  "name": "Tool: Render Video (FFmpeg)",
+  "id": "shared-render-video",
+  "meta": { "instanceId": "automaton-shared" },
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "task", "type": "string" },
+            { "name": "project_id", "type": "string" },
+            { "name": "schema", "type": "string" },
+            { "name": "cover_path", "type": "string" },
+            { "name": "audio_path", "type": "string" },
+            { "name": "video_path", "type": "string" },
+            { "name": "subtitle_path", "type": "string" },
+            { "name": "start", "type": "string" },
+            { "name": "end", "type": "string" },
+            { "name": "output_path", "type": "string" }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const i = items[0].json;\nconst task = i.task || 'render_long';\nconst project_id = i.project_id;\nconst schema = i.schema || 'music_ai';\nif (!project_id) { throw new Error('project_id is required'); }\n\nconst payload = { task, project_id, schema };\nif (task === 'render_long') {\n  payload.cover_path = i.cover_path || 'assets/cover.png';\n  payload.audio_path = i.audio_path || 'assets/audio.mp3';\n  payload.output_path = i.output_path || 'outputs/video_long.mp4';\n} else if (task === 'render_short') {\n  payload.video_path = i.video_path || 'outputs/video_long.mp4';\n  payload.start = i.start || '00:00:00';\n  payload.end = i.end || '00:00:30';\n  payload.output_path = i.output_path || 'outputs/short_01.mp4';\n} else if (task === 'burn_subtitles') {\n  payload.video_path = i.video_path || 'outputs/video_long.mp4';\n  payload.subtitle_path = i.subtitle_path || 'assets/subtitles.srt';\n  payload.output_path = i.output_path || 'outputs/video_subbed.mp4';\n} else {\n  throw new Error('Unknown task: ' + task);\n}\n\nconst bodyJson = JSON.stringify(payload);\nreturn [{ json: { bodyJson, task, project_id, output_path: payload.output_path } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "2",
+      "name": "Build Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/jobs/ffmpeg",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.bodyJson }}",
+        "options": {}
+      },
+      "id": "3",
+      "name": "Queue FFmpeg",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = items[0].json || {};\nconst meta = $('Build Payload').first().json;\nreturn [{ json: {\n  jobId: r.id || null,\n  status: r.status || 'queued',\n  project_id: meta.project_id,\n  task: meta.task,\n  output_path: meta.output_path\n} }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "4",
+      "name": "Format Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [[{ "node": "Build Payload", "type": "main", "index": 0 }]]
+    },
+    "Build Payload": {
+      "main": [[{ "node": "Queue FFmpeg", "type": "main", "index": 0 }]]
+    },
+    "Queue FFmpeg": {
+      "main": [[{ "node": "Format Result", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": []
+}

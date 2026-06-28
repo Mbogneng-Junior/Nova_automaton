@@ -2,7 +2,26 @@
 
 Ce dossier contient les workflows d'automatisation exécutés par la stack Automaton.
 
-Chaque workflow est un cas d'usage métier indépendant. Il peut définir :
+## Organisation de haut niveau
+
+```
+workflows/
+├── _shared/         # Briques réutilisables par TOUS les pipelines (publication, validation, rendu...)
+├── _templates/      # Squelette + manifest.template.json pour créer un pipeline
+├── content/         # Création de contenu réseaux sociaux
+│   ├── _channel-registry.json   # Registre des canaux (YT/TikTok/FB) + brand kit
+│   ├── music-ai/
+│   └── psychologie/             # (à venir)
+├── personal/        # Automatisations personnelles
+│   └── chatbot/
+├── domains/         # Autres domaines à venir
+└── exemple/         # Workflows de référence collectés
+```
+
+> **Règle clé** : un pipeline n'a PAS le droit de recoder une capacité déjà dans `_shared/`.
+> Voir `docs/CONVENTIONS.md` et `AGENTS.md` à la racine.
+
+Chaque pipeline est un cas d'usage métier indépendant. Il peut définir :
 - ses templates de données,
 - ses prompts,
 - ses règles métier,
@@ -21,18 +40,20 @@ workflows/<workflow-name>/
 └── examples/                 # Exemples de sortie générée
 ```
 
-## Workflows actuels
+## Pipelines actuels
 
-- **`music-ai/`** : production musicale automatisée (Suno, Leonardo, YouTube, TikTok, etc.)
-- **`workflow-template/`** : squelette pour créer un nouveau workflow
+- **`content/music-ai/`** : production musicale automatisée (Suno, Leonardo, YouTube, TikTok, etc.)
+- **`personal/chatbot/`** : chatbot WhatsApp personnel (Bedrock Claude)
+- **`_templates/pipeline-template/`** : squelette pour créer un nouveau pipeline
 
-## Ajouter un workflow
+## Ajouter un pipeline
 
-1. Copier `workflow-template/` en `mon-workflow/`.
-2. Éditer le `README.md` et les templates.
-3. Ajouter les prompts dans `prompts/`.
-4. Créer les workflows n8n dans l'interface et les exporter dans `n8n/`.
-5. Si besoin de traitements spécifiques, ajouter un worker dans `workers/`.
+1. `cp -r workflows/_templates/pipeline-template workflows/content/mon-pipeline`.
+2. Copier `workflows/_templates/manifest.template.json` en `manifest.json` et le remplir.
+3. Éditer le `README.md`, les `prompts/` et les `templates/`.
+4. Construire les workflows dans n8n, puis les exporter dans `n8n/`.
+5. Réutiliser les briques de `_shared/` (ne pas recoder).
+6. Déclarer les canaux dans `content/_channel-registry.json`.
 
 ## Bonnes pratiques
 
