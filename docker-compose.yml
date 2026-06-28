@@ -164,7 +164,7 @@ services:
         limits:
           memory: 2G
 
-  # Hermes Agent
+  # Hermes Agent (now includes HCI)
   hermes:
     build: ./services/hermes
     container_name: automaton_hermes
@@ -178,36 +178,18 @@ services:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - HERMES_CONTROL_PASSWORD=${HERMES_HCI_PASSWORD:-changeme}
+      - HERMES_CONTROL_SECRET=${HERMES_HCI_SECRET:-automaton_secret_key_123}
     ports:
       - "127.0.0.1:8123:8123"
     networks:
-      - automaton_network
+      automaton_network:
+        aliases:
+          - hermes-hci
     deploy:
       resources:
         limits:
           memory: 1G
-
-  # Hermes Control Interface (HCI)
-  hermes-hci:
-    build: ./services/hermes-hci
-    container_name: automaton_hermes_hci
-    restart: unless-stopped
-    environment:
-      - PORT=10274
-      - HOST=0.0.0.0
-      - HERMES_CONTROL_PASSWORD=${HERMES_HCI_PASSWORD:-changeme}
-      - HERMES_CONTROL_SECRET=${HERMES_HCI_SECRET:-automaton_secret_key_123}
-      - HERMES_API_URL=http://hermes:8123
-    volumes:
-      - ./data/hermes-hci:/app/data
-    networks:
-      - automaton_network
-    depends_on:
-      - hermes
-    deploy:
-      resources:
-        limits:
-          memory: 512M
 
 networks:
   automaton_network:

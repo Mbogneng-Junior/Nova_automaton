@@ -67,6 +67,11 @@ RUN mkdir -p ~/.local/bin && \
 # 6. Verify hermes works
 RUN hermes --version || true
 
+# 7. Install hermes-control-interface
+RUN git clone https://github.com/xaspx/hermes-control-interface.git ~/.hermes/hci && \
+    cd ~/.hermes/hci && \
+    npm install && npm run build
+
 EXPOSE 8123
 
 COPY --chown=hermes:hermes entrypoint.sh /home/hermes/entrypoint.sh

@@ -48,6 +48,14 @@ else
     echo "Could not check for updates (offline?). Continuing with current version."
 fi
 
+# Start Hermes Control Interface in background
+echo "Starting Hermes Control Interface (HCI)..."
+cd "$HOME/.hermes/hci"
+# Make sure we use the same port HCI expects, though we might not need to if we pass PORT
+export PORT=10274
+export HOST=0.0.0.0
+nohup node server.js > hci.log 2>&1 &
+
 # Start Hermes Gateway
 echo "Starting Hermes Gateway..."
 hermes gateway
