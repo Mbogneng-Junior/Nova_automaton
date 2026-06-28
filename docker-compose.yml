@@ -182,6 +182,8 @@ services:
       - HERMES_CONTROL_SECRET=${HERMES_HCI_SECRET:-automaton_secret_key_123}
     ports:
       - "127.0.0.1:8123:8123"
+    volumes:
+      - ./data/hermes-home:/home/hermes/.hermes
     networks:
       automaton_network:
         aliases:
