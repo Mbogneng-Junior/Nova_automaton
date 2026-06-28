@@ -55,6 +55,12 @@ else
     echo "Could not check for updates (offline?). Continuing with current version."
 fi
 
+# Auto-configure API server platform (config is reset on container restart)
+echo "Configuring Hermes API server..."
+hermes config set platforms.api_server.enabled true &>/dev/null || true
+hermes config set platforms.api_server.extra.port 8123 &>/dev/null || true
+hermes config set GATEWAY_ALLOW_ALL_USERS true &>/dev/null || true
+
 # Start Hermes Gateway
 echo "Starting Hermes Gateway..."
-hermes gateway
+hermes gateway run
