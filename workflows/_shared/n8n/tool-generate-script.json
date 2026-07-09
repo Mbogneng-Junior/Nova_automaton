@@ -1,0 +1,80 @@
+{
+  "name": "Tool: Generate Script (multi-profile)",
+  "id": "shared-generate-script",
+  "meta": { "instanceId": "automaton-shared" },
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "profil", "type": "string" },
+            { "name": "topic", "type": "string" },
+            { "name": "context", "type": "string" },
+            { "name": "provider", "type": "string" },
+            { "name": "model", "type": "string" },
+            { "name": "project_id", "type": "string" },
+            { "name": "max_tokens", "type": "number" },
+            { "name": "temperature", "type": "number" }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const i = items[0].json;\nif (!i.profil) throw new Error('profil is required');\nconst body = {\n  profil: String(i.profil).toLowerCase(),\n  topic: i.topic || '',\n  context: i.context || ''\n};\nif (i.provider) body.provider = String(i.provider).toLowerCase();\nif (i.model) body.model = String(i.model);\nif (i.project_id) body.project_id = String(i.project_id);\nif (i.max_tokens !== undefined && i.max_tokens !== null && i.max_tokens !== '') body.max_tokens = Number(i.max_tokens);\nif (i.temperature !== undefined && i.temperature !== null && i.temperature !== '') body.temperature = Number(i.temperature);\nconst bodyJson = JSON.stringify(body);\nreturn [{ json: { bodyJson, profil: body.profil } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "2",
+      "name": "Build Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/ai/generate-script",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.bodyJson }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "3",
+      "name": "Call Generate Script API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = items[0].json || {};\nreturn [{ json: {\n  status: r.status || 'error',\n  project_id: r.project_id || null,\n  profil: r.profil || $('Build Body').first().json.profil,\n  provider: r.provider || null,\n  script: r.script || null,\n  raw: r.raw || null,\n  error: r.error || null\n} }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "4",
+      "name": "Format Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [[{ "node": "Build Body", "type": "main", "index": 0 }]]
+    },
+    "Build Body": {
+      "main": [[{ "node": "Call Generate Script API", "type": "main", "index": 0 }]]
+    },
+    "Call Generate Script API": {
+      "main": [[{ "node": "Format Result", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": []
+}

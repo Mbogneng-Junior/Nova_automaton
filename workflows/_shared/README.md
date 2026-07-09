@@ -10,8 +10,11 @@ réutilisés par TOUS les pipelines (music-ai, psychologie, perso...).
 
 | Brique (fichier n8n) | Rôle | Type |
 |---|---|---|
-| `tool-generate-concept` | Génère un concept/script via l'API `/ai/generate-concept` | LLM |
+| `tool-generate-concept` | Génère un concept music-ai via l'API `/ai/generate-concept` | LLM |
+| `tool-generate-script` ✅ | Génère un script **multi-profil** via `/ai/generate-script` (prompts versionnés) | LLM |
 | `tool-generate-image` ✅ | Génère une cover/miniature, **multi-fournisseur** (Leonardo / OpenAI) | Image |
+| `tool-generate-speech` ✅ | Génère une voix off via **ElevenLabs** | Audio |
+| `tool-generate-subtitles` ✅ | Génère des sous-titres `.srt` via **OpenAI Whisper** | Audio |
 | `tool-render-video` ✅ | Met en file un job FFmpeg (long-form + shorts + sous-titres) | Queue |
 | `tool-hitl-approval` ✅ | **Validation humaine** : envoie un draft sur WhatsApp et met en pause jusqu'à réponse | HITL |
 | `tool-hitl-reply-router` ✅ | Retrouve la demande en attente et reprend l'exécution quand tu réponds | HITL |
@@ -48,6 +51,44 @@ Chaque brique est un **sub-workflow n8n** appelable par un autre workflow :
   `googleapis` est ajouté dans les dépendances pour un futur refactor plus robuste.
 - **TikTok / Meta** : stubs prêts, implémentation à venir.
 - **Vérifier l'état** : `GET http://api:3000/publish/platforms` → `{ supported, enabled, dry_run_default }`.
+
+## Génération de script multi-profil
+
+`tool-generate-script` (workflow `tool-generate-script.json`) appelle `POST http://api:3000/ai/generate-script`.
+
+- **Principe** : le prompt système n'est pas codé en dur. Il est lu dans
+  `workflows/_shared/prompts/<profil>-redacteur.md`.
+- **Profils livrés** : `actu-ia`, `dark-psychology`, `documentaire`, `sport`, `music-ai`, `default`.
+- **Endpoint** : `POST /ai/generate-script` `{ profil, topic?, context?, provider?, model?, max_tokens?, temperature?, project_id? }`.
+- **Sortie** : JSON structuré selon le profil + stockage dans `projects/<id>/metadata.json`.
+- **Legacy** : `/ai/generate-concept` est refactoré pour utiliser le même moteur avec le profil `music-ai`.
+
+Ajouter un profil = ajouter un fichier `<profil>-redacteur.md` + appeler l'endpoint avec `profil=<profil>`.
+
+## Génération audio & sous-titres
+
+### Voix off — `tool-generate-speech`
+
+- **Endpoint** : `POST http://api:3000/ai/generate-speech` `{ project_id, text, voice_id?, model_id?, output_name? }`.
+- **Fournisseur** : ElevenLabs (`xi-api-key`).
+- **Variables** : `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID`.
+- **Sortie** : `projects/<id>/assets/<output_name>.mp3` (défaut `voiceover.mp3`).
+
+### Sous-titres — `tool-generate-subtitles`
+
+- **Endpoint** : `POST http://api:3000/ai/generate-subtitles` `{ project_id, audio_path, language?, output_name? }`.
+- **Fournisseur** : OpenAI Whisper.
+- **Variable** : `WHISPER_MODEL` (défaut `whisper-1`).
+- **Sortie** : `projects/<id>/assets/<output_name>.srt` (défaut `subtitles.srt`).
+
+## Publication asynchrone
+
+`tool-publish` supporte maintenant `async: true`. Dans ce cas, le job est poussé dans la file
+Redis `queue:upload` et traité par le **worker upload** intégré à l'API. Cela évite de bloquer
+n8n pendant un upload YouTube long.
+
+- **Mode synchrone** : `dry_run: true/false` → réponse immédiate.
+- **Mode asynchrone** : `async: true, dry_run: false` → réponse `{ status: 'queued', job_id }`.
 
 ## Génération d'images multi-fournisseur
 

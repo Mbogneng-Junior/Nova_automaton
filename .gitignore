@@ -2,6 +2,9 @@
 .env
 .env.local
 
+# Development docs (temporary, not for production)
+developement/
+
 # Data volumes (contains live data)
 data/postgres/*
 data/n8n/*

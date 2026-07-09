@@ -1,21 +1,54 @@
 {
   "name": "Tool: Publish (multi-platform)",
   "id": "shared-publish",
-  "meta": { "instanceId": "automaton-shared" },
+  "meta": {
+    "instanceId": "automaton-shared"
+  },
   "nodes": [
     {
       "parameters": {
         "workflowInputs": {
           "values": [
-            { "name": "platform", "type": "string" },
-            { "name": "project_id", "type": "string" },
-            { "name": "file_path", "type": "string" },
-            { "name": "title", "type": "string" },
-            { "name": "description", "type": "string" },
-            { "name": "tags", "type": "string" },
-            { "name": "visibility", "type": "string" },
-            { "name": "channel_id", "type": "string" },
-            { "name": "dry_run", "type": "boolean" }
+            {
+              "name": "platform",
+              "type": "string"
+            },
+            {
+              "name": "project_id",
+              "type": "string"
+            },
+            {
+              "name": "file_path",
+              "type": "string"
+            },
+            {
+              "name": "title",
+              "type": "string"
+            },
+            {
+              "name": "description",
+              "type": "string"
+            },
+            {
+              "name": "tags",
+              "type": "string"
+            },
+            {
+              "name": "visibility",
+              "type": "string"
+            },
+            {
+              "name": "channel_id",
+              "type": "string"
+            },
+            {
+              "name": "dry_run",
+              "type": "boolean"
+            },
+            {
+              "name": "async",
+              "type": "boolean"
+            }
           ]
         }
       },
@@ -23,18 +56,24 @@
       "name": "Execute Workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
-      "position": [250, 300]
+      "position": [
+        250,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const i = items[0].json;\nconst platform = String(i.platform || '').toLowerCase();\nif (!platform) throw new Error('platform is required');\nif (!i.file_path) throw new Error('file_path is required');\nconst tags = typeof i.tags === 'string' && i.tags.trim() ? i.tags.split(',').map(s => s.trim()).filter(Boolean) : (Array.isArray(i.tags) ? i.tags : []);\nconst body = {\n  platform,\n  project_id: i.project_id || undefined,\n  file_path: i.file_path,\n  title: i.title || '',\n  description: i.description || '',\n  tags,\n  visibility: i.visibility || 'private',\n  channel_id: i.channel_id || undefined\n};\nif (i.dry_run !== undefined && i.dry_run !== null && i.dry_run !== '') body.dry_run = Boolean(i.dry_run);\nconst bodyJson = JSON.stringify(body);\nreturn [{ json: { bodyJson, platform, file_path: i.file_path } }];",
+        "jsCode": "const i = items[0].json;\nconst platform = String(i.platform || '').toLowerCase();\nif (!platform) throw new Error('platform is required');\nif (!i.file_path) throw new Error('file_path is required');\nconst tags = typeof i.tags === 'string' && i.tags.trim() ? i.tags.split(',').map(s => s.trim()).filter(Boolean) : (Array.isArray(i.tags) ? i.tags : []);\nconst body = {\n  platform,\n  project_id: i.project_id || undefined,\n  file_path: i.file_path,\n  title: i.title || '',\n  description: i.description || '',\n  tags,\n  visibility: i.visibility || 'private',\n  channel_id: i.channel_id || undefined\n};\nif (i.dry_run !== undefined && i.dry_run !== null && i.dry_run !== '') body.dry_run = Boolean(i.dry_run);\nif (i.async !== undefined && i.async !== null && i.async !== '') body.async = Boolean(i.async);\nconst bodyJson = JSON.stringify(body);\nreturn [{ json: { bodyJson, platform, file_path: i.file_path } }];",
         "mode": "runOnceForAllItems"
       },
       "id": "2",
       "name": "Build Body",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [450, 300]
+      "position": [
+        450,
+        300
+      ]
     },
     {
       "parameters": {
@@ -44,13 +83,18 @@
         "contentType": "json",
         "specifyBody": "json",
         "jsonBody": "={{ $json.bodyJson }}",
-        "options": { "timeout": 300000 }
+        "options": {
+          "timeout": 300000
+        }
       },
       "id": "3",
       "name": "Call Publish API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [650, 300]
+      "position": [
+        650,
+        300
+      ]
     },
     {
       "parameters": {
@@ -61,21 +105,50 @@
       "name": "Format Result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [850, 300]
+      "position": [
+        850,
+        300
+      ]
     }
   ],
   "connections": {
     "Execute Workflow Trigger": {
-      "main": [[{ "node": "Build Body", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Build Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Build Body": {
-      "main": [[{ "node": "Call Publish API", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Call Publish API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Call Publish API": {
-      "main": [[{ "node": "Format Result", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Format Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1"
+  },
   "staticData": null,
   "tags": []
 }

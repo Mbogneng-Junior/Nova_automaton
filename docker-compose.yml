@@ -146,8 +146,13 @@ services:
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
+      - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID:-}
+      - ELEVENLABS_MODEL_ID=${ELEVENLABS_MODEL_ID:-}
+      - WHISPER_MODEL=${WHISPER_MODEL:-whisper-1}
     volumes:
       - ./projects:/app/projects
+      - ./workflows/_shared/prompts:/app/workflows/_shared/prompts:ro
     depends_on:
       - redis
       - postgres

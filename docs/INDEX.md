@@ -15,10 +15,12 @@ Carte de toute la documentation d'Automaton. Commence par `AGENTS.md` à la raci
 - **[`HERMES_INTEGRATION.md`](HERMES_INTEGRATION.md)** — comment n8n et Hermes dialoguent.
 - **[`DEPLOYMENT.md`](DEPLOYMENT.md)** — déploiement initial sur le droplet.
 
-## Workflows
+## Workflows & intégrations
 
 - **[`/workflows/README.md`](../workflows/README.md)** — organisation des pipelines.
 - **[`/workflows/_shared/README.md`](../workflows/_shared/README.md)** — briques réutilisables.
+- **[`YOUTUBE_OAUTH.md`](YOUTUBE_OAUTH.md)** — obtenir un refresh token YouTube pour la publication.
+- **[`CONTENT_PIPELINE.md`](CONTENT_PIPELINE.md)** — vision du pipeline de contenu et écarts avec l'implémentation actuelle.
 - **[`/workflows/content/music-ai/README.md`](../workflows/content/music-ai/README.md)** — pipeline musique IA.
 - **[`/workflows/content/music-ai/n8n/TROUBLESHOOTING.md`](../workflows/content/music-ai/n8n/TROUBLESHOOTING.md)** — pièges n8n (JSON, expressions).
 

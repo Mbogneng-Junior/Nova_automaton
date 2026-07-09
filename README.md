@@ -1,8 +1,16 @@
-# Automaton
+# 🤖 Automaton - NeureNova
 
-Stack d'automatisation de contenus IA, modulaire et réutilisable.
+Infrastructure d'automatisation IA auto-hébergée pour la création de contenu et les automatisations personnelles.
 
-La musique IA est le premier cas pratique, mais la structure est conçue pour accueillir plusieurs workflows (vidéo, blog, newsletter, social media, etc.).
+> **Nouveau ?** Commence par lire [`AGENTS.md`](AGENTS.md) pour comprendre l'architecture en 5 minutes.
+
+## 🎯 Objectif
+
+Produire, optimiser et publier du contenu sur les réseaux sociaux **avec validation humaine à chaque étape sensible**, et une boucle d'amélioration basée sur les analytics.
+
+**Deux grandes familles d'usages :**
+1. **Création de contenu social** (Music AI, Psychologie...) avec distribution multi-canaux
+2. **Automatisations personnelles** (chatbot WhatsApp, résumés emails...)
 
 ## Structure du projet
 
@@ -43,34 +51,68 @@ La musique IA est le premier cas pratique, mais la structure est conçue pour ac
 
 - **`music-ai`** : génération de tracks IA, covers, vidéos, Shorts, upload et analytics.
 
-## Documentation
+## 📚 Documentation
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [Déploiement](docs/DEPLOYMENT.md)
-- [Guide workflows](workflows/README.md)
+### 🚀 Démarrage
+- **[developement/QUICK_START.md](developement/QUICK_START.md)** - Déploiement rapide (15-20 min)
+- **[developement/DEPLOYMENT_GUIDE.md](developement/DEPLOYMENT_GUIDE.md)** - Guide complet en 5 phases
+- **[RUNBOOK.md](RUNBOOK.md)** - Procédures opérationnelles
 
-## Démarrage rapide
+### 📖 Référence
+- **[AGENTS.md](AGENTS.md)** - Architecture & modèle mental (START HERE)
+- **[TODO.md](TODO.md)** - Checklist de déploiement
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Architecture technique détaillée
+- **[docs/CONVENTIONS.md](docs/CONVENTIONS.md)** - Conventions de code
+- **[docs/HERMES_INTEGRATION.md](docs/HERMES_INTEGRATION.md)** - Intégration Hermes Agent
+- **[docs/INDEX.md](docs/INDEX.md)** - Index de toute la documentation
+
+### 🛠️ Workflows & Scripts
+- **[workflows/README.md](workflows/README.md)** - Organisation des workflows
+- **[workflows/_shared/HITL.md](workflows/_shared/HITL.md)** - Validation humaine (WhatsApp)
+- **[scripts/README.md](scripts/README.md)** - Scripts de déploiement et tests
+
+## ⚡ Démarrage rapide
+
+### Tu as déjà le droplet configuré ?
 
 ```bash
-# 1. Créer le repo GitHub (voir docs/DEPLOYMENT.md)
-# 2. Configurer le serveur
-ssh root@TON_IP
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/TON_COMPTE/automaton/main/scripts/setup-server.sh)"
-
-# 3. Cloner sur le droplet
-ssh automaton@TON_IP
-git clone https://github.com/TON_COMPTE/automaton.git /home/automaton/automaton
+# 1. Pull les dernières modifications
 cd /home/automaton/automaton
+git pull
 
-# 4. Configurer
-cp .env.example .env
-nano .env
+# 2. Rebuild l'API
+docker compose up -d --build api
 
-# 5. Certificat SSL (voir docs/DEPLOYMENT.md)
+# 3. Vérifier l'état
+./scripts/check-system-status.sh
 
-# 6. Lancer
-docker-compose up -d
+# 4. Tester les endpoints
+./scripts/test-api-endpoints.sh droplet
 ```
+
+**Voir [QUICK_START.md](QUICK_START.md) pour le guide complet.**
+
+### Premier déploiement ?
+
+```bash
+# 1. Setup serveur (une seule fois)
+ssh root@TON_IP
+curl -fsSL https://raw.githubusercontent.com/Mbogneng-Junior/Nova_automaton/master/scripts/setup-server.sh | bash
+
+# 2. Cloner et configurer
+ssh automaton@TON_IP
+cd /home/automaton/automaton
+cp .env.example .env
+nano .env  # Remplir les secrets
+
+# 3. Lancer
+docker compose up -d --build
+
+# 4. Configurer Hermes
+./scripts/setup-hermes.sh
+```
+
+**Voir [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) pour le guide détaillé.**
 
 ## Commandes utiles
 
@@ -93,13 +135,38 @@ docker-compose pull && docker-compose up -d
 docker-compose down -v
 ```
 
-## Créer un nouveau workflow
+## 🧪 Scripts utiles
 
 ```bash
-cp -r workflows/workflow-template workflows/mon-nouveau-workflow
-# Éditer workflows/mon-nouveau-workflow/README.md
-# Ajouter prompts, templates, workflows n8n
+# Vérifier l'état complet du système
+./scripts/check-system-status.sh
+
+# Tester tous les endpoints API
+./scripts/test-api-endpoints.sh droplet
+
+# Obtenir le token YouTube OAuth
+node scripts/get-youtube-token.js
+
+# Backup de la base de données
+./scripts/backup.sh
 ```
+
+**Voir [scripts/README.md](scripts/README.md) pour la liste complète.**
+
+## 🏗️ Créer un nouveau workflow
+
+```bash
+# Copier le template
+cp -r workflows/_templates/pipeline-template workflows/content/mon-workflow
+
+# Copier et remplir le manifest
+cp workflows/_templates/manifest.template.json workflows/content/mon-workflow/manifest.json
+
+# Éditer le README et les prompts
+nano workflows/content/mon-workflow/README.md
+```
+
+**Voir [docs/CONVENTIONS.md](docs/CONVENTIONS.md) pour les conventions.**
 
 ## Sécurité
 
@@ -117,14 +184,40 @@ cp -r workflows/workflow-template workflows/mon-nouveau-workflow
 - Distribution musicale : ~$22/an
 - **Total : ~$66-91/mois**
 
-## Prochaines étapes
+## 🎯 État actuel du projet
 
-1. Créer le repo GitHub et pousser le code.
-2. Déployer sur le droplet.
-3. Connecter OpenAI, Suno, Leonardo dans n8n.
-4. Valider le workflow `music-ai` end-to-end.
-5. Ajouter un deuxième workflow.
+### ✅ Fonctionnalités déployées
+- Infrastructure Docker complète (7 services)
+- n8n orchestrateur avec workflows music-ai
+- Hermes Agent (Bedrock Claude) avec HCI
+- API métier avec endpoints FFmpeg, publication, génération d'images
+- Validation humaine (HITL) via WhatsApp
+- Base de données PostgreSQL avec schémas par workflow
+- Redis + BullMQ pour les queues
 
-## Note
+### 🚧 En cours de déploiement
+- Configuration OAuth YouTube pour publication réelle
+- Import des 5 workflows partagés dans n8n
+- Tests complets des nouveaux endpoints
+- Câblage du reply-router HITL
 
-Le warning de schéma `package.json` dans l'IDE est un problème de connexion au schema store. J'ai ajouté un champ `$schema` correct ; si le warning persiste, il ne bloque pas le build.
+**Voir [TODO.md](TODO.md) pour la checklist complète.**
+
+## 🌐 URLs des services
+
+| Service | URL |
+|---------|-----|
+| n8n Workflows | https://n8n.automaton.neurenova.tech |
+| Hermes HCI | https://hermes.automaton.neurenova.tech |
+| API Métier | http://
+:3000 (interne) |
+
+## 🆘 Support
+
+- **Problème de déploiement ?** → [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) section Troubleshooting
+- **Service qui ne démarre pas ?** → [RUNBOOK.md](RUNBOOK.md) section Troubleshooting
+- **Question sur l'architecture ?** → [AGENTS.md](AGENTS.md) ou [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+## 📝 Licence
+
+Propriétaire - NeureNova © 2026
