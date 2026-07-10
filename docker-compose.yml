@@ -162,6 +162,8 @@ services:
       - SEO_PROVIDER=${SEO_PROVIDER:-openai}
       - SCRIPT_PROVIDER=${SCRIPT_PROVIDER:-openai}
       - DEFAULT_SCRIPT_MODEL=${DEFAULT_SCRIPT_MODEL:-}
+    ports:
+      - "127.0.0.1:3000:3000"
     volumes:
       - ./projects:/app/projects
       - ./workflows/_shared/prompts:/app/workflows/_shared/prompts:ro
