@@ -64,16 +64,30 @@ if docker exec automaton_postgres psql -U postgres -d automaton -c "\l" > /dev/n
     # Vérifier les schémas
     echo ""
     echo "📊 Schémas disponibles:"
-    docker exec automaton_postgres psql -U postgres -d automaton -c "\dn" | grep -E "music_ai|shared_hitl|workflow_template" || echo "   ⚠️  Aucun schéma métier trouvé"
+    docker exec automaton_postgres psql -U postgres -d automaton -c "\dn" | grep -E "music_ai|shared|workflow_template" || echo "   ⚠️  Aucun schéma métier trouvé"
     
-    # Vérifier les tables HITL
+    # Vérifier les tables shared
     echo ""
-    echo "📋 Tables HITL:"
-    if docker exec automaton_postgres psql -U postgres -d automaton -c "\dt shared_hitl.*" 2>/dev/null | grep -q "approval_states"; then
-        echo "   ✅ shared_hitl.approval_states"
-        echo "   ✅ shared_hitl.approval_logs"
+    echo "📋 Tables shared:"
+    if docker exec automaton_postgres psql -U postgres -d automaton -c "\dt shared.*" 2>/dev/null | grep -q "hitl_approvals"; then
+        echo "   ✅ shared.hitl_approvals"
     else
-        echo "   ❌ Tables HITL non créées (exécute: docker exec -i automaton_postgres psql -U postgres -d automaton < services/postgres/init/03-shared-hitl.sql)"
+        echo "   ❌ shared.hitl_approvals manquante (exécute: docker exec -i automaton_postgres psql -U postgres -d automaton < services/postgres/init/03-shared-hitl.sql)"
+    fi
+    if docker exec automaton_postgres psql -U postgres -d automaton -c "\dt shared.*" 2>/dev/null | grep -q "raw_items"; then
+        echo "   ✅ shared.raw_items"
+    else
+        echo "   ❌ shared.raw_items manquante"
+    fi
+    if docker exec automaton_postgres psql -U postgres -d automaton -c "\dt shared.*" 2>/dev/null | grep -q "themes_traites"; then
+        echo "   ✅ shared.themes_traites"
+    else
+        echo "   ❌ shared.themes_traites manquante"
+    fi
+    if docker exec automaton_postgres psql -U postgres -d automaton -c "\dt shared.*" 2>/dev/null | grep -q "video_analytics"; then
+        echo "   ✅ shared.video_analytics"
+    else
+        echo "   ❌ shared.video_analytics manquante"
     fi
 else
     echo "❌ Impossible de se connecter à PostgreSQL"
@@ -105,26 +119,29 @@ echo "4️⃣  API Métier"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-if docker exec automaton_api curl -s http://localhost:3000/health > /dev/null 2>&1; then
+# Test depuis l'hôte car curl n'est pas dans le conteneur API
+API_URL="http://127.0.0.1:3000"
+
+if command -v curl >/dev/null 2>&1 && curl -s "${API_URL}/health" > /dev/null 2>&1; then
     echo "✅ API répond"
     
     # Vérifier les endpoints
     echo ""
     echo "📡 Endpoints disponibles:"
     
-    if docker exec automaton_api curl -s http://localhost:3000/publish/platforms > /dev/null 2>&1; then
+    if curl -s "${API_URL}/publish/platforms" > /dev/null 2>&1; then
         echo "   ✅ /publish/platforms"
     else
         echo "   ❌ /publish/platforms"
     fi
     
-    if docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate-image -H "Content-Type: application/json" -d '{}' > /dev/null 2>&1; then
+    if curl -s -X POST "${API_URL}/ai/generate-image" -H "Content-Type: application/json" -d '{}' > /dev/null 2>&1; then
         echo "   ✅ /ai/generate-image"
     else
         echo "   ❌ /ai/generate-image"
     fi
     
-    if docker exec automaton_api curl -s http://localhost:3000/ffmpeg/status > /dev/null 2>&1; then
+    if curl -s "${API_URL}/ffmpeg/status" > /dev/null 2>&1; then
         echo "   ✅ /ffmpeg/status"
     else
         echo "   ❌ /ffmpeg/status"
@@ -143,13 +160,16 @@ echo "5️⃣  Hermes Agent"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-if docker exec automaton_hermes curl -s http://localhost:8123/v1/health > /dev/null 2>&1; then
+HERMES_URL="http://127.0.0.1:8123"
+HERMES_HCI_URL="http://127.0.0.1:10274"
+
+if command -v curl >/dev/null 2>&1 && curl -s "${HERMES_URL}/v1/health" > /dev/null 2>&1; then
     echo "✅ Hermes Gateway répond"
 else
     echo "⚠️  Hermes Gateway ne répond pas (normal si pas encore configuré)"
 fi
 
-if docker exec automaton_hermes curl -s http://localhost:10274/api/health > /dev/null 2>&1; then
+if command -v curl >/dev/null 2>&1 && curl -s "${HERMES_HCI_URL}/api/health" > /dev/null 2>&1; then
     echo "✅ Hermes HCI répond"
 else
     echo "⚠️  Hermes HCI ne répond pas"
@@ -162,7 +182,9 @@ echo "6️⃣  n8n Workflows"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-if docker exec automaton_n8n wget -q --spider http://localhost:5678/healthz; then
+N8N_URL="http://127.0.0.1:5678"
+
+if command -v curl >/dev/null 2>&1 && curl -s "${N8N_URL}/health" > /dev/null 2>&1; then
     echo "✅ n8n répond"
     echo ""
     echo "🌐 Interface: https://n8n.automaton.neurenova.tech"

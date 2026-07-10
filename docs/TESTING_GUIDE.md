@@ -8,7 +8,7 @@ Tous les tests se font **sur le droplet** (SSH), sauf mention contraire.
 ## Pré-requis de lecture
 
 - `API_URL` = `http://localhost:3000` (depuis l'intérieur des containers)
-- `EXEC` = `docker exec automaton_api curl -s -X`
+- `EXEC` = `curl -s -X`
 - Un test réussi retourne un JSON sans champ `error` au premier niveau.
 - Si un test échoue → consulter les logs : `docker logs --tail 50 automaton_api`
 
@@ -67,7 +67,7 @@ Attendu : `7/7 services actifs` (nginx, n8n, postgres, redis, api, ffmpeg-worker
 ### 1.2 API répond
 
 ```bash
-docker exec automaton_api curl -s http://localhost:3000/health | jq .
+curl -s http://localhost:3000/health | jq .
 ```
 
 Attendu :
@@ -125,7 +125,7 @@ docker exec automaton_api env | grep -E "OPENAI|ANTHROPIC|DEEPSEEK|MISTRAL|SUNO|
 ### 3.1 OpenAI
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate \
+curl -s -X POST http://localhost:3000/ai/generate \
   -H "Content-Type: application/json" \
   -d '{"provider":"openai","prompt":"Réponds juste : ok","max_tokens":10}' | jq .
 ```
@@ -135,7 +135,7 @@ Attendu : `{ "text": "ok", ... }`
 ### 3.2 Anthropic
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate \
+curl -s -X POST http://localhost:3000/ai/generate \
   -H "Content-Type: application/json" \
   -d '{"provider":"anthropic","prompt":"Réponds juste : ok","max_tokens":10}' | jq .
 ```
@@ -143,7 +143,7 @@ docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate \
 ### 3.3 DeepSeek (si clé définie)
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate \
+curl -s -X POST http://localhost:3000/ai/generate \
   -H "Content-Type: application/json" \
   -d '{"provider":"deepseek","prompt":"Réponds juste : ok","max_tokens":10}' | jq .
 ```
@@ -151,7 +151,7 @@ docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate \
 ### 3.4 Mistral (si clé définie)
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate \
+curl -s -X POST http://localhost:3000/ai/generate \
   -H "Content-Type: application/json" \
   -d '{"provider":"mistral","prompt":"Réponds juste : ok","max_tokens":10}' | jq .
 ```
@@ -163,7 +163,7 @@ docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate \
 ### 4.1 Script profil actu-ia
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate-script \
+curl -s -X POST http://localhost:3000/ai/generate-script \
   -H "Content-Type: application/json" \
   -d '{
     "profil": "actu-ia",
@@ -177,7 +177,7 @@ Attendu : `status: "script_generated"`, `parse_error` absent ou `false`.
 ### 4.2 Script profil dark-psychology (Claude)
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate-script \
+curl -s -X POST http://localhost:3000/ai/generate-script \
   -H "Content-Type: application/json" \
   -d '{
     "profil": "dark-psychology",
@@ -203,7 +203,7 @@ docker exec automaton_api cat /app/projects/<project_id>/metadata.json | jq '{pr
 ### 5.1 Affirmation vraie
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/fact-check \
+curl -s -X POST http://localhost:3000/ai/fact-check \
   -H "Content-Type: application/json" \
   -d '{
     "claims": ["ChatGPT a été lancé par OpenAI en novembre 2022"],
@@ -217,7 +217,7 @@ Attendu : `block_publication: false`, `status: "confirmed"` ou `"unconfirmed"`.
 ### 5.2 Affirmation fausse (doit bloquer)
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/fact-check \
+curl -s -X POST http://localhost:3000/ai/fact-check \
   -H "Content-Type: application/json" \
   -d '{
     "claims": ["Elon Musk a fondé OpenAI et en reste PDG en 2025"],
@@ -233,7 +233,7 @@ Attendu : `block_publication: true` (profil documentaire + statut non confirmé 
 ## Phase 6 — SEO
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/seo \
+curl -s -X POST http://localhost:3000/ai/seo \
   -H "Content-Type: application/json" \
   -d '{
     "topic": "Les 5 techniques de manipulation psychologique les plus utilisées",
@@ -253,7 +253,7 @@ Attendu : `status: "ok"`, `titles` = tableau de 3 éléments, `hashtags` présen
 > Coûte des crédits Suno. Attendre ~2 minutes.
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate-music \
+curl -s -X POST http://localhost:3000/ai/generate-music \
   -H "Content-Type: application/json" \
   -d '{
     "project_id": "test_music_001",
@@ -274,7 +274,7 @@ docker exec automaton_api ls -lh /app/projects/test_music_001/assets/
 ## Phase 8 — Génération voix (ElevenLabs)
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate-speech \
+curl -s -X POST http://localhost:3000/ai/generate-speech \
   -H "Content-Type: application/json" \
   -d '{
     "project_id": "test_music_001",
@@ -292,7 +292,7 @@ Attendu : `status: "completed"`, `path: "assets/voiceover_test.mp3"`.
 ### 9.1 Leonardo AI
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate-image \
+curl -s -X POST http://localhost:3000/ai/generate-image \
   -H "Content-Type: application/json" \
   -d '{
     "project_id": "test_music_001",
@@ -307,7 +307,7 @@ docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate-imag
 ### 9.2 OpenAI DALL-E
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate-image \
+curl -s -X POST http://localhost:3000/ai/generate-image \
   -H "Content-Type: application/json" \
   -d '{
     "project_id": "test_music_001",
@@ -320,7 +320,7 @@ docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate-imag
 ### 9.3 Stock-first (Pexels/Pixabay/Unsplash en priorité)
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate-image \
+curl -s -X POST http://localhost:3000/ai/generate-image \
   -H "Content-Type: application/json" \
   -d '{
     "project_id": "test_music_001",
@@ -335,7 +335,7 @@ Attendu : `provider` = `"pexels"`, `"pixabay"` ou `"unsplash"` si une source est
 ### 9.4 Recherche stock seule
 
 ```bash
-docker exec automaton_api curl -s \
+curl -s \
   "http://localhost:3000/media/stock?query=dark+psychology+shadows&per_page=3" \
   | jq '{count, results: [.results[] | {source, id, photographer}]}'
 ```
@@ -349,7 +349,7 @@ Attendu : `count >= 1` si au moins une clé stock est définie.
 > Requiert un fichier audio dans le projet. On utilise celui créé en phase 8.
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/generate-subtitles \
+curl -s -X POST http://localhost:3000/ai/generate-subtitles \
   -H "Content-Type: application/json" \
   -d '{
     "project_id": "test_music_001",
@@ -375,7 +375,7 @@ docker exec automaton_api cat /app/projects/test_music_001/assets/subtitles_test
 ### 11.1 Rendu long (16:9)
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/jobs/ffmpeg \
+curl -s -X POST http://localhost:3000/jobs/ffmpeg \
   -H "Content-Type: application/json" \
   -d '{
     "project_id": "test_music_001",
@@ -401,7 +401,7 @@ docker exec automaton_api ls -lh /app/projects/test_music_001/outputs/
 ### 11.2 Burn subtitles
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/jobs/ffmpeg \
+curl -s -X POST http://localhost:3000/jobs/ffmpeg \
   -H "Content-Type: application/json" \
   -d '{
     "project_id": "test_music_001",
@@ -417,7 +417,7 @@ docker exec automaton_api curl -s -X POST http://localhost:3000/jobs/ffmpeg \
 ## Phase 12 — Contrôle Qualité (ffprobe)
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/ai/quality-check \
+curl -s -X POST http://localhost:3000/ai/quality-check \
   -H "Content-Type: application/json" \
   -d '{
     "project_id": "test_music_001",
@@ -465,7 +465,7 @@ docker exec automaton_postgres psql -U postgres -d automaton \
 ### 14.1 Lister les plateformes activées
 
 ```bash
-docker exec automaton_api curl -s http://localhost:3000/publish/platforms | jq .
+curl -s http://localhost:3000/publish/platforms | jq .
 ```
 
 Attendu :
@@ -480,7 +480,7 @@ Attendu :
 ### 14.2 Dry-run YouTube
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/publish \
+curl -s -X POST http://localhost:3000/publish \
   -H "Content-Type: application/json" \
   -d '{
     "platform": "youtube",
@@ -499,7 +499,7 @@ Attendu : `status: "dry_run"`, `would_publish.title` = ton titre.
 ### 14.3 Dry-run TikTok
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/publish \
+curl -s -X POST http://localhost:3000/publish \
   -H "Content-Type: application/json" \
   -d '{
     "platform": "tiktok",
@@ -513,7 +513,7 @@ docker exec automaton_api curl -s -X POST http://localhost:3000/publish \
 ### 14.4 Dry-run Meta
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/publish \
+curl -s -X POST http://localhost:3000/publish \
   -H "Content-Type: application/json" \
   -d '{
     "platform": "meta",
@@ -532,7 +532,7 @@ docker exec automaton_api curl -s -X POST http://localhost:3000/publish \
 # D'abord, désactiver le dry_run global
 # Dans .env : PUBLISH_DRY_RUN=false  puis  docker compose restart api
 
-docker exec automaton_api curl -s -X POST http://localhost:3000/publish \
+curl -s -X POST http://localhost:3000/publish \
   -H "Content-Type: application/json" \
   -d '{
     "platform": "youtube",
@@ -558,7 +558,7 @@ docker logs --tail 30 automaton_api | grep "upload worker"
 > Requiert `TIKTOK_ACCESS_TOKEN` (valide 24h) + une URL publique Cloudinary ou S3.
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/publish \
+curl -s -X POST http://localhost:3000/publish \
   -H "Content-Type: application/json" \
   -d '{
     "platform": "tiktok",
@@ -575,7 +575,7 @@ docker exec automaton_api curl -s -X POST http://localhost:3000/publish \
 > Requiert `META_ACCESS_TOKEN` + `INSTAGRAM_ACCOUNT_ID` + URL publique.
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/publish \
+curl -s -X POST http://localhost:3000/publish \
   -H "Content-Type: application/json" \
   -d '{
     "platform": "meta",
@@ -596,7 +596,7 @@ docker exec automaton_api curl -s -X POST http://localhost:3000/publish \
 ### 15.1 Enqueue un job analytics
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/jobs/analytics \
+curl -s -X POST http://localhost:3000/jobs/analytics \
   -H "Content-Type: application/json" \
   -d '{
     "video_id": "TON_VIDEO_ID_YOUTUBE",
@@ -625,7 +625,7 @@ docker exec automaton_api cat /app/projects/test_music_001/metadata.json | jq '.
 ### 16.1 Insérer un item de veille
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/content/raw-items \
+curl -s -X POST http://localhost:3000/content/raw-items \
   -H "Content-Type: application/json" \
   -d '{
     "profil": "actu-ia",
@@ -641,7 +641,7 @@ docker exec automaton_api curl -s -X POST http://localhost:3000/content/raw-item
 ### 16.2 Lister les items en attente
 
 ```bash
-docker exec automaton_api curl -s \
+curl -s \
   "http://localhost:3000/content/raw-items?profil=actu-ia&status=pending&limit=5" \
   | jq '{count, items: [.items[] | {id, title, source, status}]}'
 ```
@@ -650,7 +650,7 @@ docker exec automaton_api curl -s \
 
 ```bash
 # Remplacer <ID> par l'id retourné en 16.1
-docker exec automaton_api curl -s -X PATCH http://localhost:3000/content/raw-items/<ID> \
+curl -s -X PATCH http://localhost:3000/content/raw-items/<ID> \
   -H "Content-Type: application/json" \
   -d '{"status": "selected", "project_id": "test_music_001"}' | jq .
 ```
@@ -658,7 +658,7 @@ docker exec automaton_api curl -s -X PATCH http://localhost:3000/content/raw-ite
 ### 16.4 Enregistrer un thème traité
 
 ```bash
-docker exec automaton_api curl -s -X POST http://localhost:3000/content/themes \
+curl -s -X POST http://localhost:3000/content/themes \
   -H "Content-Type: application/json" \
   -d '{
     "profil": "dark-psychology",
@@ -671,7 +671,7 @@ docker exec automaton_api curl -s -X POST http://localhost:3000/content/themes \
 ### 16.5 Vérifier qu'un thème déjà traité remonte
 
 ```bash
-docker exec automaton_api curl -s \
+curl -s \
   "http://localhost:3000/content/themes?profil=dark-psychology" \
   | jq '{count, items: [.items[] | {theme, label, use_count, last_used_at}]}'
 ```
@@ -685,10 +685,10 @@ Après avoir validé toutes les phases manuellement, mettre à jour `scripts/tes
 
 ```bash
 # Vérifier la liste des endpoints reconnus
-docker exec automaton_api curl -s http://localhost:3000/health | jq .
-docker exec automaton_api curl -s http://localhost:3000/publish/platforms | jq .
-docker exec automaton_api curl -s "http://localhost:3000/media/stock?query=test" | jq '{count}'
-docker exec automaton_api curl -s "http://localhost:3000/content/raw-items?profil=actu-ia&limit=1" | jq '{count}'
+curl -s http://localhost:3000/health | jq .
+curl -s http://localhost:3000/publish/platforms | jq .
+curl -s "http://localhost:3000/media/stock?query=test" | jq '{count}'
+curl -s "http://localhost:3000/content/raw-items?profil=actu-ia&limit=1" | jq '{count}'
 ```
 
 ---
@@ -697,7 +697,7 @@ docker exec automaton_api curl -s "http://localhost:3000/content/raw-items?profi
 
 | Phase | Ce qui est testé | Signe de succès |
 |---|---|---|
-| 0 | Déploiement + SQL | `3 tables` dans `shared.*`, log `Analytics worker started` |
+| 0 | Déploiement + SQL | `4 tables` dans `shared.*`, log `Analytics worker started` |
 | 1 | Infrastructure | `7/7` services actifs, `/health` → `ok` |
 | 2 | Variables d'env | Clés visibles dans `env` |
 | 3 | LLM texte | `text` présent dans la réponse pour chaque provider |

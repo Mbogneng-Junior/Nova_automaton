@@ -7,8 +7,8 @@ set -e
 MODE=${1:-local}
 
 if [ "$MODE" = "droplet" ]; then
-    # Tests sur le droplet (via docker exec)
-    API_CMD="docker exec automaton_api curl -s"
+    # Tests sur le droplet (curl depuis l'hôte, ports exposés sur 127.0.0.1)
+    API_CMD="curl -s"
     BASE_URL="http://localhost:3000"
 else
     # Tests en local
