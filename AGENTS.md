@@ -43,18 +43,22 @@ distribution** l'adapte vers N canaux (format 16:9 vs 9:16, langue, ton, hashtag
 
 - **n8n = le chef d'orchestre / la plomberie** : cron, webhooks, appels API, files d'attente,
   retries, intégrations. Déterministe.
-- **Hermes = le cerveau / l'agent** : raisonnement multi-étapes, navigation web, recherche de
-  tendances, analyse de sentiment, réécriture de script.
+- **Hermes = le cerveau / l'agent / l'interface conversationnelle** : raisonnement multi-étapes,
+  navigation web, recherche de tendances, analyse de sentiment, réécriture de script, **mémoire
+  persistante**, **création de skills**, et dialogue multi-canaux (Telegram, WhatsApp, Discord,
+  Slack, Email, HCI).
 - **Ils se parlent en réseau Docker privé** (`automaton_network`) : n8n appelle
   `http://hermes:8123/v1/...`, Hermes appelle `http://n8n:5678/webhook/...`.
-  Détails : `docs/HERMES_INTEGRATION.md`.
+  Détails : `docs/HERMES_INTEGRATION.md` et `docs/HERMES_ROADMAP.md`.
 
 ---
 
 ## 4. Validation humaine (Human-in-the-loop)
 
 **Rien de sensible ne se publie sans ton feu vert.** Le canal d'approbation universel est
-**WhatsApp** (via Green API, déjà en place). Chaque pipeline a des **portes** :
+**WhatsApp** (via Green API, déjà en place). À terme, Hermes permettra un **HITL multi-canaux**
+(Telegram, WhatsApp, Discord, Slack, Email) avec mémoire et interprétation des retours.
+Chaque pipeline a des **portes** :
 
 ```
 Idée → [valider concept/script] → Assets → [valider audio/vidéo] → [valider date + canaux] → Publication

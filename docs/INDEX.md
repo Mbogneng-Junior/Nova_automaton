@@ -13,6 +13,7 @@ Carte de toute la documentation d'Automaton. Commence par `AGENTS.md` à la raci
 - **[`ARCHITECTURE.md`](ARCHITECTURE.md)** — couches de la stack, base multi-schéma, modularité.
 - **[`CONVENTIONS.md`](CONVENTIONS.md)** — nommage, manifest, comment ajouter thématique/canal/brique.
 - **[`HERMES_INTEGRATION.md`](HERMES_INTEGRATION.md)** — comment n8n et Hermes dialoguent.
+- **[`HERMES_ROADMAP.md`](HERMES_ROADMAP.md)** — auto-amélioration via Hermes (mémoire, skills, browser automation).
 - **[`DEPLOYMENT.md`](DEPLOYMENT.md)** — déploiement initial sur le droplet.
 
 ## Workflows & intégrations

@@ -1,6 +1,10 @@
-# 🧠 Intégration de l'Infrastructure : Hermes & n8n & Serveurs
+# 🧠 Hermes au centre de l'infrastructure
 
 Ce document explique comment l'agent IA **Hermes**, l'orchestrateur **n8n**, et les bases de données (PostgreSQL, Redis) cohabitent et communiquent au sein de l'infrastructure `Automaton`.
+
+> **Vision actuelle** : Hermes n'est pas seulement un gateway LLM. C'est le **cerveau conversationnel** du système : il reçoit les messages de l'utilisateur, comprend les intentions, déclenche les workflows, apprend des feedbacks et crée des skills réutilisables.
+>
+> Voir la roadmap complète : [`docs/HERMES_ROADMAP.md`](HERMES_ROADMAP.md).
 
 ---
 
@@ -11,23 +15,42 @@ C'est grâce à lui que les containers se parlent **sans jamais passer par inter
 
 ```mermaid
 graph TD
+    subgraph Internet Public
+        User((Utilisateur 👨‍💻)) --> |Telegram| TG[Telegram Bot]
+        User --> |WhatsApp| WA[WhatsApp Green API]
+        User --> |Discord| DC[Discord Bot]
+        User --> |Slack| SL[Slack]
+        User --> |Email| EM[Email]
+        User --> |https://hermes...| NGINX[Nginx Proxy]
+    end
+
     subgraph Automaton Network (100% Privé)
-        H[Hermes Agent] <--> |Port 8123| N8N[n8n]
+        TG --> H[Hermes Agent]
+        WA --> H
+        DC --> H
+        SL --> H
+        EM --> H
+        NGINX --> H
+        H <--> |Port 8123| N8N[n8n]
         N8N <--> |Port 5432| DB[(PostgreSQL)]
         N8N <--> |Port 6379| R[(Redis)]
         N8N <--> |Port 3000| API[API Node.js]
         H <--> |I/O local| HCI[HCI / TUI]
-    end
-
-    subgraph Internet Public
-        User((Utilisateur 👨‍💻)) --> |https://n8n...| NGINX[Nginx Proxy]
-        User --> |https://hermes...| NGINX
-        NGINX --> H
-        NGINX --> N8N
+        H <--> |skills + memory| HH[data/hermes-home]
     end
 ```
 
 ---
+
+## 🎯 Rôle central d'Hermes
+
+Hermes est le point d'entrée privilégié pour :
+
+1. **La conversation** : l'utilisateur parle à Hermes via Telegram, WhatsApp, Discord, Slack, Email ou HCI.
+2. **L'intention** : Hermes comprend ce que l'utilisateur veut (générer, valider, critiquer, publier, analyser).
+3. **L'action** : Hermes déclenche les workflows n8n, l'API Node, ou les queues Redis.
+4. **L'apprentissage** : Hermes crée des skills et met à jour `shared.preferences` à partir des feedbacks.
+5. **La mémoire** : Hermes se souvient des projets, des préférences et des conversations passées.
 
 ## 🤝 Comment faire dialoguer n8n et Hermes ?
 
@@ -62,6 +85,23 @@ Si vous voulez que votre agent conversationnel (Hermes) puisse déclencher un em
 4. Désormais, chaque fois que vous demandez à Hermes : *"Poste un résumé du projet X sur Twitter"*, Hermes appellera n8n en interne sans utiliser l'internet externe.
 
 ---
+
+## 📡 Canaux de communication supportés
+
+Hermes peut recevoir et envoyer des messages sur plusieurs canaux simultanément :
+
+| Canal | Configuration | Usage dans Automaton |
+|---|---|---|
+| **Telegram** | Bot token via @BotFather | Interface principale riche (boutons, médias, threads) |
+| **WhatsApp** | Green API (déjà en place) | HITL et notifications simples |
+| **Discord** | Bot token | Feedback détaillé, debug, canaux thématiques |
+| **Slack** | App token | Collaboration équipe, multi-utilisateurs |
+| **Signal** | Signal CLI | Échanges sensibles |
+| **Email** | SMTP/IMAP | Récapitulifs, rapports hebdomadaires |
+| **HCI Web** | `https://hermes...` | Dashboard de configuration et monitoring |
+| **CLI / TUI** | `hermes` dans le container | Développement et debug |
+
+> **Principe** : quel que soit le canal, le cerveau reste le même. Un feedback donné sur Telegram est réutilisé si l'utilisateur passe sur WhatsApp la semaine suivante.
 
 ## 💾 Cohabitation avec PostgreSQL et Redis
 

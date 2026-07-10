@@ -21,9 +21,11 @@ réutilisés par TOUS les pipelines (music-ai, psychologie, perso...).
 | `tool-publish` ✅ | Publie sur YouTube/TikTok/Meta avec **dry_run par défaut** | Publication |
 | `tool-analyze-trends` | Recherche de tendances (délègue à Hermes) | Agent |
 | `tool-analyze-performance` | Analyse rétention/sentiment + propose des ajustements | Agent |
-| `tool-fact-check` | Vérification croisée via LLM (`/ai/fact-check`) | QA |
-| `tool-seo` | Titres/descriptions/tags par plateforme (`/ai/seo`) | SEO |
-| `tool-quality-check` | Inspection `ffprobe` + conformité par profil (`/ai/quality-check`) | QA |
+| `tool-fact-check` ✅ | Vérification croisée via LLM (`/ai/fact-check`) | QA |
+| `tool-seo` ✅ | Titres/descriptions/tags par plateforme (`/ai/seo`) | SEO |
+| `tool-quality-check` ✅ | Inspection `ffprobe` + conformité par profil (`/ai/quality-check`) | QA |
+| `tool-learn-from-feedback` | Feedback utilisateur → skill Hermes + préférence Postgres | Agent |
+| `tool-hermes-router` | Route les messages Telegram/WhatsApp/Discord vers les bons workflows | Agent |
 
 > Les fichiers `.json` sont des **exports n8n** versionnés. La source de vérité d'exécution
 > reste la base Postgres de n8n. Voir `docs/CONVENTIONS.md`.
@@ -104,6 +106,17 @@ L'Agent Média peut privilégier le stock libre avant de générer une image IA.
 - **Endpoint de mise en file** : `POST http://api:3000/jobs/analytics` `{ project_id, video_id, profil? }`.
 - **Sources** : YouTube Data API (views/likes/comments) + YouTube Analytics API (rétention).
 - **Stockage** : `shared.video_analytics` (`services/postgres/init/05-shared-analytics.sql`).
+
+## Hermes comme orchestrateur conversationnel
+
+Hermes est le **cerveau** du système, pas seulement un fournisseur LLM. Il reçoit les messages de l'utilisateur sur plusieurs canaux, comprend les intentions, déclenche les briques `_shared`, et apprend des feedbacks.
+
+- **Canaux supportés** : Telegram, WhatsApp, Discord, Slack, Email, HCI web, CLI.
+- **Rôle** : interface humaine, veille active, scoring, création de skills, HITL 2.0.
+- **Briques liées** : `tool-analyze-trends`, `tool-analyze-performance`, `tool-learn-from-feedback`, `tool-hermes-router`.
+- **Doc détaillée** : `docs/HERMES_ROADMAP.md` et `docs/HERMES_INTEGRATION.md`.
+
+> **Modèle cible** : tu dis à Hermes *"Génère un script actu-ia sur GPT-5.5, angle débutant"*, il déclenche `tool-generate-script`, puis te propose la validation via Telegram/WhatsApp.
 
 ## Génération audio & sous-titres
 

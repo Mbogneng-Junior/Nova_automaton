@@ -162,49 +162,79 @@ Endpoints encore à créer :
 ## 9. Architecture cible simplifiée
 
 ```text
-Cron n8n / Webhook / Manuel
+Utilisateur (Telegram/WhatsApp/Discord/Slack/Email/HCI)
     │
     ▼
-Agent Veille → PostgreSQL (raw_items)
-    │
-    ▼
-Agent Analyse → Hermes (arbitrage)
-    │
-    ▼
-Agent Rédacteur → script structuré
-    │
-    ▼
-Agent Fact-Checking
-    │
-    ├── Agent SEO
-    ├── Agent Média
-    ├── Agent Musique
-    ├── Agent Audio
-    └── Agent Sous-titres
-    │
-    ▼
-Agent Montage → queue:ffmpeg → ffmpeg-worker
-    │
-    ▼
-Contrôle Qualité
-    │
-    ▼
-HITL (WhatsApp/Green API)
-    │
-    ▼
-Agent Publication → queue:upload → YouTube/TikTok/Meta
-    │
-    ▼
-Agent Analytics → queue:analytics → Hermes
+┌─────────────────────────────────────┐
+│           Hermes Agent              │
+│  (cerveau conversationnel + mémoire)  │
+│  - comprend les intentions            │
+│  - propose les sujets               │
+│  - collecte les feedbacks           │
+│  - crée et améliore les skills        │
+└──────────────┬──────────────────────┘
+               │
+    ┌──────────┼──────────┐
+    │          │          │
+    ▼          ▼          ▼
+ Agent     Agent      Workflow
+ Veille    Analyse    n8n / API
+    │       │            │
+    ▼       ▼            ▼
+PostgreSQL   Hermes    Orchestration
+(raw_items)  scoring  (n8n + API Node)
+               │            │
+               └──────┬─────┘
+                      │
+                      ▼
+        ┌─────────────────────────────┐
+        │      Agent Rédacteur        │
+        │   /ai/generate-script       │
+        └─────────────┬───────────────┘
+                      │
+                      ▼
+        ┌─────────────────────────────┐
+        │   Fact-checking + SEO     │
+        │   Média + Musique + Audio   │
+        │   Sous-titres             │
+        └─────────────┬───────────────┘
+                      │
+                      ▼
+        Agent Montage → queue:ffmpeg → ffmpeg-worker
+                      │
+                      ▼
+              Contrôle Qualité
+                      │
+                      ▼
+            HITL (WhatsApp/Telegram)
+                      │
+                      ▼
+        Agent Publication → queue:upload → YouTube/TikTok/Meta
+                      │
+                      ▼
+        Agent Analytics → queue:analytics → PostgreSQL + Hermes
 ```
+
+> **Nouveau modèle mental** : Hermes n'est pas un agent parmi d'autres. C'est la **couche conversationnelle et cognitive** qui orchestre le pipeline. Les workflows n8n restent le moteur d'exécution, mais Hermes devient l'interface humaine et le moteur d'apprentissage.
 
 ---
 
 ## 10. Conclusion
 
-La vision du pipeline est **pleinement cohérente et désormais quasi-complète**. Les 13 agents du socle ont tous une implémentation active. Les deux seules briques encore ouvertes sont des optimisations :
+La vision du pipeline est **pleinement cohérente et désormais quasi-complète**. Les 13 agents du socle ont tous une implémentation active.
+
+La prochaine évolution majeure est le passage d'Hermes de **gateway LLM** à **cerveau conversationnel central** :
+
+- Interface multi-canaux (Telegram, WhatsApp, Discord, Slack, Email, HCI)
+- Veille active et scoring par Browser Use
+- Apprentissage des préférences via feedbacks
+- Création et amélioration automatiques de skills
+- Multi-agent délégué pour le pipeline complet
+
+Les briques techniques encore ouvertes :
 
 - **Gabarits de montage par profil** dans le worker FFmpeg (ratio/rythme configurable)
 - **Briques n8n `tool-analyze-trends` / `tool-analyze-performance`** (délégation à Hermes)
+- **Interface Hermes conversationnelle** : bot Telegram, feedback structuré, HITL 2.0
 
 Chaque nouvelle niche s'ajoute en remplissant une fiche profil et en écrivant le prompt `_shared/prompts/<profil>-redacteur.md`, sans toucher au moteur.

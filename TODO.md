@@ -148,6 +148,30 @@ Accéder à https://n8n.automaton.neurenova.tech et importer :
 
 ---
 
+## 🧠 Phase 7 : Auto-amélioration via Hermes (après stabilisation)
+
+> Voir le détail dans `docs/HERMES_ROADMAP.md`. Hermes (Nous Research) est un agent auto-améliorant
+> avec mémoire persistante, création automatique de skills et browser automation. Ces capacités sont
+> aujourd'hui sous-utilisées dans Automaton.
+
+- [ ] **7.1** Vérifier la configuration Hermes sur le droplet (`hermes model`, `hermes doctor`, HCI)
+- [ ] **7.2** Configurer le **Tool Gateway Nous** (web search, image gen, browser) pour réduire les clés API
+- [ ] **7.3** Router les tâches par modèle via Hermes (veille cheap, rédaction Claude, fact-check Claude, SEO GPT-4o-mini)
+- [ ] **7.4** Créer le schéma `shared.preferences` pour stocker les préférences apprises
+- [ ] **7.5** Créer l'endpoint `POST /ai/feedback` pour recevoir critiques et ratings
+- [ ] **7.6** Créer la brique n8n `tool-learn-from-feedback` : feedback → skill Hermes + préférence Postgres
+- [ ] **7.7** Créer la brique n8n `tool-analyze-trends` : veille active + scoring via Browser Use
+- [ ] **7.8** Créer la brique n8n `tool-analyze-performance` : analyse de `shared.video_analytics`
+- [ ] **7.9** Modifier `tool-render-video` pour injecter les préférences de montage du profil
+- [ ] **7.10** Mettre en place un cron hebdo d'apprentissage analytics
+- [ ] **7.11** Créer le bot Telegram et le connecter à Hermes comme **interface principale**
+- [ ] **7.12** Utiliser Hermes pour enrichir le HITL **multi-canaux** (WhatsApp/Telegram) : demandes de validation + interprétation des retours
+- [ ] **7.13** Créer la brique n8n `tool-hermes-router` pour router les messages Hermes vers les bons workflows
+- [ ] **7.14** Explorer `hermes-agent-self-evolution` pour optimiser automatiquement les skills de publication/montage
+- [ ] **7.15** Documenter les rituels : feedback quotidien, revue analytics hebdo, mise à jour skills mensuelle
+
+---
+
 ## 🔮 Prochaines briques `_shared` (après déploiement)
 
 - [x] Worker `queue:upload` — publication asynchrone (YouTube/TikTok/Meta) via BullMQ. ✅ fait.

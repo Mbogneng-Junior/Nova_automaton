@@ -41,7 +41,8 @@ Produire, optimiser et publier du contenu sur les réseaux sociaux **avec valida
 ## Stack déployée
 
 - **n8n** : orchestration des workflows
-- **PostgreSQL** : base de données n8n + analytics
+- **Hermes** : agent IA conversationnel, mémoire, skills, veille
+- **PostgreSQL** : base de données n8n + analytics + feedback
 - **Redis** : queue BullMQ
 - **API Node.js** : endpoints métiers pour FFmpeg, upload, analytics
 - **FFmpeg worker** : rendu vidéo, Shorts, sous-titres
@@ -64,6 +65,7 @@ Produire, optimiser et publier du contenu sur les réseaux sociaux **avec valida
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Architecture technique détaillée
 - **[docs/CONVENTIONS.md](docs/CONVENTIONS.md)** - Conventions de code
 - **[docs/HERMES_INTEGRATION.md](docs/HERMES_INTEGRATION.md)** - Intégration Hermes Agent
+- **[docs/HERMES_ROADMAP.md](docs/HERMES_ROADMAP.md)** - Roadmap auto-amélioration via Hermes
 - **[docs/INDEX.md](docs/INDEX.md)** - Index de toute la documentation
 
 ### 🛠️ Workflows & Scripts
