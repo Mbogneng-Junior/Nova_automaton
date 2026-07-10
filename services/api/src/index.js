@@ -443,18 +443,22 @@ async function generateAndStoreImage({ project_id, prompt, width = 1024, height 
 // Chaque provider publie un fichier et retourne { id, url, raw }. Activation par .env.
 // Sécurité: dry_run par défaut (PUBLISH_DRY_RUN), rien ne part en ligne sans désactivation explicite.
 
-function getYouTubeClient() {
+function getYouTubeAuthClient() {
   const { YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN } = process.env;
   if (!YOUTUBE_CLIENT_ID || !YOUTUBE_CLIENT_SECRET || !YOUTUBE_REFRESH_TOKEN) {
     throw new Error('YouTube OAuth not configured (YOUTUBE_CLIENT_ID / YOUTUBE_CLIENT_SECRET / YOUTUBE_REFRESH_TOKEN)');
   }
   const oauth2Client = new google.auth.OAuth2(YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET);
   oauth2Client.setCredentials({ refresh_token: YOUTUBE_REFRESH_TOKEN });
-  return google.youtube({ version: 'v3', auth: oauth2Client });
+  return oauth2Client;
+}
+
+function getYouTubeDataApi() {
+  return google.youtube({ version: 'v3', auth: getYouTubeAuthClient() });
 }
 
 async function publishYouTube({ filePath, title, description, tags, visibility }) {
-  const youtube = getYouTubeClient();
+  const youtube = getYouTubeDataApi();
   const stat = await fs.stat(filePath);
   const res = await youtube.videos.insert({
     part: 'snippet,status',
@@ -624,9 +628,21 @@ async function publishMeta({ video_url, title, description }) {
   const publishData = await publishRes.json();
   if (!publishRes.ok || publishData.error) throw new Error(publishData.error?.message || 'Meta publish failed');
 
+  // Step 3 — récupérer le permalink pour avoir une URL utilisable
+  let permalink = `https://www.instagram.com/`;
+  try {
+    const permalinkRes = await fetch(
+      `https://graph.facebook.com/v19.0/${publishData.id}?fields=permalink&access_token=${accessToken}`
+    );
+    const permalinkData = await permalinkRes.json();
+    if (permalinkData.permalink) permalink = permalinkData.permalink;
+  } catch (e) {
+    console.warn('[publishMeta] permalink fetch failed:', e.message);
+  }
+
   return {
     id: publishData.id,
-    url: `https://www.instagram.com/p/${publishData.id}/`,
+    url: permalink,
     raw: publishData
   };
 }
@@ -724,7 +740,7 @@ function startAnalyticsWorker() {
     const { project_id, video_id, profil } = job.data;
     console.log(`[analytics worker] job ${job.id} started: video_id=${video_id}`);
 
-    const youtube = getYouTubeClient();
+    const youtube = getYouTubeDataApi();
 
     // Métriques de base via videos.list
     const videoRes = await youtube.videos.list({
@@ -737,8 +753,10 @@ function startAnalyticsWorker() {
 
     // Métriques analytiques via youtubeAnalytics.reports (si credentials disponibles)
     let analyticsData = null;
+    let avgDuration = null;
+    let avgPercentage = null;
     try {
-      const youtubeAnalytics = google.youtubeAnalytics({ version: 'v2', auth: getYouTubeClient()._options?.auth });
+      const youtubeAnalytics = google.youtubeAnalytics({ version: 'v2', auth: getYouTubeAuthClient() });
       const now = new Date();
       const startDate = new Date(now.getTime() - 7 * 24 * 3600 * 1000).toISOString().split('T')[0];
       const endDate = now.toISOString().split('T')[0];
@@ -750,6 +768,14 @@ function startAnalyticsWorker() {
         filters: `video==${video_id}`
       });
       analyticsData = analyticsRes.data;
+      const row = analyticsData.rows?.[0];
+      if (row && analyticsData.columnHeaders) {
+        // row order matches columnHeaders order
+        analyticsData.columnHeaders.forEach((h, i) => {
+          if (h.name === 'averageViewDuration') avgDuration = parseFloat(row[i]);
+          if (h.name === 'averageViewPercentage') avgPercentage = parseFloat(row[i]);
+        });
+      }
     } catch (e) {
       console.warn('[analytics worker] youtubeAnalytics skipped:', e.message);
     }
@@ -758,24 +784,30 @@ function startAnalyticsWorker() {
       video_id,
       project_id,
       profil: profil || null,
+      platform: 'youtube',
       collected_at: new Date().toISOString(),
       views: parseInt(stats.viewCount || 0),
       likes: parseInt(stats.likeCount || 0),
       comments: parseInt(stats.commentCount || 0),
       favorites: parseInt(stats.favoriteCount || 0),
+      avg_view_duration_sec: avgDuration,
+      avg_view_percentage: avgPercentage,
       analytics: analyticsData
     };
 
     // Stocker dans shared.video_analytics
     await pgPool.query(
       `INSERT INTO shared.video_analytics
-         (video_id, project_id, profil, views, likes, comments, favorites, analytics_raw, collected_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+         (video_id, project_id, profil, platform, views, likes, comments, favorites,
+          avg_view_duration_sec, avg_view_percentage, analytics_raw, collected_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
        ON CONFLICT (video_id) DO UPDATE SET
-         views=$4, likes=$5, comments=$6, favorites=$7,
-         analytics_raw=$8, collected_at=$9`,
-      [video_id, project_id || null, profil || null,
+         views=$5, likes=$6, comments=$7, favorites=$8,
+         avg_view_duration_sec=$9, avg_view_percentage=$10,
+         analytics_raw=$11, collected_at=$12`,
+      [video_id, project_id || null, profil || null, result.platform,
         result.views, result.likes, result.comments, result.favorites,
+        result.avg_view_duration_sec, result.avg_view_percentage,
         JSON.stringify(analyticsData), result.collected_at]
     );
 

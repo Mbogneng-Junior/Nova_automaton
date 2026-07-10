@@ -19,10 +19,11 @@ réutilisés par TOUS les pipelines (music-ai, psychologie, perso...).
 | `tool-hitl-approval` ✅ | **Validation humaine** : envoie un draft sur WhatsApp et met en pause jusqu'à réponse | HITL |
 | `tool-hitl-reply-router` ✅ | Retrouve la demande en attente et reprend l'exécution quand tu réponds | HITL |
 | `tool-publish` ✅ | Publie sur YouTube/TikTok/Meta avec **dry_run par défaut** | Publication |
-| `tool-publish-tiktok` | Publie/programme sur TikTok | Publication |
-| `tool-publish-meta` | Publie sur Facebook/Instagram | Publication |
 | `tool-analyze-trends` | Recherche de tendances (délègue à Hermes) | Agent |
 | `tool-analyze-performance` | Analyse rétention/sentiment + propose des ajustements | Agent |
+| `tool-fact-check` | Vérification croisée via LLM (`/ai/fact-check`) | QA |
+| `tool-seo` | Titres/descriptions/tags par plateforme (`/ai/seo`) | SEO |
+| `tool-quality-check` | Inspection `ffprobe` + conformité par profil (`/ai/quality-check`) | QA |
 
 > Les fichiers `.json` sont des **exports n8n** versionnés. La source de vérité d'exécution
 > reste la base Postgres de n8n. Voir `docs/CONVENTIONS.md`.
@@ -48,8 +49,10 @@ Chaque brique est un **sub-workflow n8n** appelable par un autre workflow :
   il retourne seulement un aperçu de ce qui serait publié. Pour passer en vrai mode, envoie
   `dry_run: false` dans l'appel ET/OU mets `PUBLISH_DRY_RUN=false` dans `.env`.
 - **YouTube** : nécessite `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET`, `YOUTUBE_REFRESH_TOKEN`.
-  `googleapis` est ajouté dans les dépendances pour un futur refactor plus robuste.
-- **TikTok / Meta** : stubs prêts, implémentation à venir.
+- **TikTok** : Content Posting API v2. Préfère `video_url` (Cloudinary/S3) ; upload direct chunké en fallback.
+  Variables : `TIKTOK_CLIENT_KEY`, `TIKTOK_ACCESS_TOKEN`.
+- **Meta / Instagram Reels** : Graph API v19, 2 étapes (container + publish). Nécessite `video_url` publique.
+  Variables : `META_ACCESS_TOKEN`, `INSTAGRAM_ACCOUNT_ID`.
 - **Vérifier l'état** : `GET http://api:3000/publish/platforms` → `{ supported, enabled, dry_run_default }`.
 
 ## Génération de script multi-profil
@@ -64,6 +67,43 @@ Chaque brique est un **sub-workflow n8n** appelable par un autre workflow :
 - **Legacy** : `/ai/generate-concept` est refactoré pour utiliser le même moteur avec le profil `music-ai`.
 
 Ajouter un profil = ajouter un fichier `<profil>-redacteur.md` + appeler l'endpoint avec `profil=<profil>`.
+
+## Stock media (Pexels / Pixabay / Unsplash)
+
+L'Agent Média peut privilégier le stock libre avant de générer une image IA.
+
+- **Endpoint recherche** : `GET http://api:3000/media/stock?query=...&sources=pexels,pixabay&per_page=5`.
+- **Activation** : `STOCK_PROVIDERS_ENABLED=pexels,pixabay,unsplash` dans `.env`.
+- **Variables** : `PEXELS_API_KEY`, `PIXABAY_API_KEY`, `UNSPLASH_ACCESS_KEY`.
+- **Intégration génération IA** : `POST /ai/generate-image` accepte `stock_first: true` et
+  `cloudinary_upload: true` pour uploader automatiquement le résultat sur Cloudinary.
+
+## Fact-checking
+
+- **Endpoint** : `POST http://api:3000/ai/fact-check` `{ claims: [...], profil?, provider? }`.
+- **Provider par défaut** : `FACT_CHECK_PROVIDER=anthropic`.
+- **Sortie** : JSON `{ status, confidence, reasoning, sources_needed, block_publication }` par claim.
+- **Règle documentaire** : `block_publication: true` si le statut n'est pas `confirmed` pour un profil `documentaire`.
+
+## SEO
+
+- **Endpoint** : `POST http://api:3000/ai/seo` `{ topic?, script?, platforms?, profil?, language?, provider? }`.
+- **Provider par défaut** : `SEO_PROVIDER=openai`.
+- **Sortie** : 3 variantes de titre + metadata par plateforme (YouTube, TikTok, Instagram) + top hashtags.
+
+## Contrôle Qualité
+
+- **Endpoint** : `POST http://api:3000/ai/quality-check` `{ project_id, file_path, profil? }`.
+- **Outil** : `ffprobe` (inclus dans l'image Docker API via `apk add ffmpeg`).
+- **Vérifications** : durée dans les bornes du profil, présence des flux audio/vidéo, bitrate, codecs.
+
+## Worker Analytics
+
+`queue:analytics` collecte automatiquement les métriques d'une vidéo YouTube ~48h après publication.
+
+- **Endpoint de mise en file** : `POST http://api:3000/jobs/analytics` `{ project_id, video_id, profil? }`.
+- **Sources** : YouTube Data API (views/likes/comments) + YouTube Analytics API (rétention).
+- **Stockage** : `shared.video_analytics` (`services/postgres/init/05-shared-analytics.sql`).
 
 ## Génération audio & sous-titres
 

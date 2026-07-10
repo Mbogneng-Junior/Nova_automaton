@@ -71,10 +71,13 @@ Accéder à https://n8n.automaton.neurenova.tech et importer :
 - [ ] **3.3** `workflows/_shared/n8n/tool-generate-image.json`
 - [ ] **3.4** `workflows/_shared/n8n/tool-generate-speech.json`
 - [ ] **3.5** `workflows/_shared/n8n/tool-generate-subtitles.json`
-- [ ] **3.6** `workflows/_shared/n8n/tool-render-video.json`
-- [ ] **3.7** `workflows/_shared/n8n/tool-hitl-approval.json`
-- [ ] **3.8** `workflows/_shared/n8n/tool-hitl-reply-router.json`
-- [ ] **3.9** Activer tous les workflows importés
+- [ ] **3.6** `workflows/_shared/n8n/tool-fact-check.json`
+- [ ] **3.7** `workflows/_shared/n8n/tool-seo.json`
+- [ ] **3.8** `workflows/_shared/n8n/tool-quality-check.json`
+- [ ] **3.9** `workflows/_shared/n8n/tool-render-video.json`
+- [ ] **3.10** `workflows/_shared/n8n/tool-hitl-approval.json`
+- [ ] **3.11** `workflows/_shared/n8n/tool-hitl-reply-router.json`
+- [ ] **3.12** Activer tous les workflows importés
 
 ---
 
@@ -126,13 +129,18 @@ Accéder à https://n8n.automaton.neurenova.tech et importer :
 - [ ] **6.4** Tester POST /ai/generate-script (Actu IA, Dark Psychology, Documentaire, Sport)
 - [ ] **6.5** Tester POST /ai/generate-image (Leonardo)
 - [ ] **6.6** Tester POST /ai/generate-image (OpenAI)
-- [ ] **6.7** Tester POST /ffmpeg/render
-- [ ] **6.8** Tester POST /ai/generate-speech (ElevenLabs)
-- [ ] **6.9** Tester POST /ai/generate-subtitles (Whisper)
-- [ ] **6.10** Tester POST /publish avec `async: true` (queue upload)
-- [ ] **6.11** Tester POST /content/raw-items et GET /content/raw-items
-- [ ] **6.12** Tester POST /content/themes et GET /content/themes
-- [ ] **6.13** Tester le flux HITL complet via WhatsApp :
+- [ ] **6.7** Tester POST /ai/fact-check
+- [ ] **6.8** Tester POST /ai/seo
+- [ ] **6.9** Tester POST /ai/quality-check
+- [ ] **6.10** Tester GET /media/stock
+- [ ] **6.11** Tester POST /jobs/analytics
+- [ ] **6.12** Tester POST /ffmpeg/render
+- [ ] **6.13** Tester POST /ai/generate-speech (ElevenLabs)
+- [ ] **6.14** Tester POST /ai/generate-subtitles (Whisper)
+- [ ] **6.15** Tester POST /publish avec `async: true` (queue upload)
+- [ ] **6.16** Tester POST /content/raw-items et GET /content/raw-items
+- [ ] **6.17** Tester POST /content/themes et GET /content/themes
+- [ ] **6.18** Tester le flux HITL complet via WhatsApp :
   - Envoyer un message à l'agent music-ai
   - Vérifier qu'il demande validation
   - Répondre "oui" ou "non"
@@ -148,9 +156,9 @@ Accéder à https://n8n.automaton.neurenova.tech et importer :
 - [x] Document `docs/CONTENT_PIPELINE.md` — vision pipeline + état réel. ✅ fait.
 - [x] Tables `shared.raw_items` et `shared.themes_traites` + endpoints. ✅ fait.
 - [x] `tool-generate-script` — générateur de script multi-profil avec prompts versionnés. ✅ fait.
-- [x] Endpoint `/ai/fact-check` — fact-checking LLM (`block_publication`). ✅ fait.
-- [x] Endpoint `/ai/seo` — titres/descriptions/tags par plateforme. ✅ fait.
-- [x] Endpoint `/ai/quality-check` — inspection ffprobe, conformité par profil. ✅ fait.
+- [x] Endpoint `/ai/fact-check` + brique n8n `tool-fact-check.json`. ✅ fait.
+- [x] Endpoint `/ai/seo` + brique n8n `tool-seo.json`. ✅ fait.
+- [x] Endpoint `/ai/quality-check` + brique n8n `tool-quality-check.json`. ✅ fait.
 - [x] Endpoint `GET /media/stock` — Pexels/Pixabay/Unsplash. ✅ fait.
 - [x] Publication TikTok (Content Posting API v2) + Meta (Reels Graph API). ✅ fait.
 - [x] Worker `queue:analytics` + table `shared.video_analytics`. ✅ fait.

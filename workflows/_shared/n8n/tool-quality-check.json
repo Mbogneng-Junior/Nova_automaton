@@ -1,0 +1,75 @@
+{
+  "name": "Tool: Quality Check",
+  "id": "shared-quality-check",
+  "meta": { "instanceId": "automaton-shared" },
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "project_id", "type": "string" },
+            { "name": "file_path", "type": "string" },
+            { "name": "profil", "type": "string" }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const i = items[0].json || {};\nif (!i.project_id || !i.file_path) throw new Error('project_id and file_path are required');\nconst body = {\n  project_id: String(i.project_id),\n  file_path: String(i.file_path),\n  profil: i.profil || 'default'\n};\nconst bodyJson = JSON.stringify(body);\nreturn [{ json: { bodyJson } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "2",
+      "name": "Build Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/ai/quality-check",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.bodyJson }}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "3",
+      "name": "Call Quality Check API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = items[0].json || {};\nreturn [{ json: {\n  status: r.status || 'error',\n  ok: r.ok || false,\n  project_id: r.project_id || null,\n  file_path: r.file_path || null,\n  profil: r.profil || null,\n  issues: r.issues || [],\n  duration_sec: r.duration_sec || null,\n  video: r.video || null,\n  audio: r.audio || null,\n  error: r.error || null\n} }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "4",
+      "name": "Format Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [[{ "node": "Build Body", "type": "main", "index": 0 }]]
+    },
+    "Build Body": {
+      "main": [[{ "node": "Call Quality Check API", "type": "main", "index": 0 }]]
+    },
+    "Call Quality Check API": {
+      "main": [[{ "node": "Format Result", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": []
+}

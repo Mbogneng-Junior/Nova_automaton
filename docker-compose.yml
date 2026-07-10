@@ -150,6 +150,18 @@ services:
       - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID:-}
       - ELEVENLABS_MODEL_ID=${ELEVENLABS_MODEL_ID:-}
       - WHISPER_MODEL=${WHISPER_MODEL:-whisper-1}
+      - TIKTOK_CLIENT_KEY=${TIKTOK_CLIENT_KEY:-}
+      - TIKTOK_ACCESS_TOKEN=${TIKTOK_ACCESS_TOKEN:-}
+      - META_ACCESS_TOKEN=${META_ACCESS_TOKEN:-}
+      - INSTAGRAM_ACCOUNT_ID=${INSTAGRAM_ACCOUNT_ID:-}
+      - STOCK_PROVIDERS_ENABLED=${STOCK_PROVIDERS_ENABLED:-pexels,pixabay,unsplash}
+      - PEXELS_API_KEY=${PEXELS_API_KEY:-}
+      - PIXABAY_API_KEY=${PIXABAY_API_KEY:-}
+      - UNSPLASH_ACCESS_KEY=${UNSPLASH_ACCESS_KEY:-}
+      - FACT_CHECK_PROVIDER=${FACT_CHECK_PROVIDER:-anthropic}
+      - SEO_PROVIDER=${SEO_PROVIDER:-openai}
+      - SCRIPT_PROVIDER=${SCRIPT_PROVIDER:-openai}
+      - DEFAULT_SCRIPT_MODEL=${DEFAULT_SCRIPT_MODEL:-}
     volumes:
       - ./projects:/app/projects
       - ./workflows/_shared/prompts:/app/workflows/_shared/prompts:ro

@@ -1,0 +1,79 @@
+{
+  "name": "Tool: SEO",
+  "id": "shared-seo",
+  "meta": { "instanceId": "automaton-shared" },
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "topic", "type": "string" },
+            { "name": "script", "type": "string" },
+            { "name": "profil", "type": "string" },
+            { "name": "platforms", "type": "array" },
+            { "name": "language", "type": "string" },
+            { "name": "provider", "type": "string" },
+            { "name": "model", "type": "string" }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const i = items[0].json || {};\nif (!i.topic && !i.script) throw new Error('topic or script is required');\nconst body = {};\nif (i.topic) body.topic = String(i.topic);\nif (i.script) body.script = String(i.script);\nif (i.profil) body.profil = String(i.profil);\nif (Array.isArray(i.platforms)) body.platforms = i.platforms;\nif (i.language) body.language = String(i.language);\nif (i.provider) body.provider = String(i.provider).toLowerCase();\nif (i.model) body.model = String(i.model);\nconst bodyJson = JSON.stringify(body);\nreturn [{ json: { bodyJson } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "2",
+      "name": "Build Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/ai/seo",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.bodyJson }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "3",
+      "name": "Call SEO API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = items[0].json || {};\nreturn [{ json: {\n  status: r.status || 'error',\n  provider: r.provider || null,\n  profil: r.profil || null,\n  platforms: r.platforms || [],\n  seo: r.seo || null,\n  error: r.error || null\n} }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "4",
+      "name": "Format Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [[{ "node": "Build Body", "type": "main", "index": 0 }]]
+    },
+    "Build Body": {
+      "main": [[{ "node": "Call SEO API", "type": "main", "index": 0 }]]
+    },
+    "Call SEO API": {
+      "main": [[{ "node": "Format Result", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": []
+}

@@ -1,0 +1,78 @@
+{
+  "name": "Tool: Fact Check",
+  "id": "shared-fact-check",
+  "meta": { "instanceId": "automaton-shared" },
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "claims", "type": "array" },
+            { "name": "script", "type": "string" },
+            { "name": "profil", "type": "string" },
+            { "name": "provider", "type": "string" },
+            { "name": "model", "type": "string" },
+            { "name": "sources_required", "type": "number" }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const i = items[0].json || {};\nconst claimList = Array.isArray(i.claims) ? i.claims : (i.script ? [i.script] : []);\nif (claimList.length === 0) throw new Error('claims (array) or script (string) is required');\nconst body = {\n  claims: claimList,\n  profil: i.profil || '',\n  sources_required: i.sources_required !== undefined ? Number(i.sources_required) : 2\n};\nif (i.provider) body.provider = String(i.provider).toLowerCase();\nif (i.model) body.model = String(i.model);\nconst bodyJson = JSON.stringify(body);\nreturn [{ json: { bodyJson } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "2",
+      "name": "Build Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3000/ai/fact-check",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.bodyJson }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "3",
+      "name": "Call Fact Check API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = items[0].json || {};\nreturn [{ json: {\n  status: r.status || 'error',\n  provider: r.provider || null,\n  profil: r.profil || null,\n  block_publication: r.block_publication || false,\n  results: r.results || [],\n  error: r.error || null\n} }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "4",
+      "name": "Format Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [[{ "node": "Build Body", "type": "main", "index": 0 }]]
+    },
+    "Build Body": {
+      "main": [[{ "node": "Call Fact Check API", "type": "main", "index": 0 }]]
+    },
+    "Call Fact Check API": {
+      "main": [[{ "node": "Format Result", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": []
+}
