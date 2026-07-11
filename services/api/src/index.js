@@ -12,6 +12,7 @@ const { Queue, Worker } = require('bullmq');
 const IORedis = require('ioredis');
 const { Pool } = require('pg');
 const { google } = require('googleapis');
+const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -104,11 +105,49 @@ async function generateWithMistral({ model, prompt, temperature = 0.7, max_token
   return data.choices[0].message.content;
 }
 
+let _bedrockClient = null;
+function getBedrockClient() {
+  if (_bedrockClient) return _bedrockClient;
+  _bedrockClient = new BedrockRuntimeClient({
+    region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    }
+  });
+  return _bedrockClient;
+}
+
+async function generateWithBedrock({ model, prompt, temperature = 0.7, max_tokens = 1024 }) {
+  const client = getBedrockClient();
+  const modelId = model || process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+
+  const payload = {
+    anthropic_version: 'bedrock-2023-05-31',
+    max_tokens,
+    temperature,
+    messages: [{ role: 'user', content: prompt }]
+  };
+
+  const command = new InvokeModelCommand({
+    modelId,
+    contentType: 'application/json',
+    accept: 'application/json',
+    body: JSON.stringify(payload)
+  });
+
+  const response = await client.send(command);
+  const raw = await response.body.transformToString();
+  const data = JSON.parse(raw);
+  return data.content[0].text;
+}
+
 const aiProviders = {
   openai: generateWithOpenAI,
   anthropic: generateWithAnthropic,
   deepseek: generateWithDeepSeek,
-  mistral: generateWithMistral
+  mistral: generateWithMistral,
+  bedrock: generateWithBedrock
 };
 
 // === Generic script generation (multi-profile) ===
@@ -119,6 +158,7 @@ function resolveScriptModel(provider) {
   if (p === 'anthropic') return 'claude-3-5-sonnet-20241022';
   if (p === 'mistral') return 'mistral-medium-latest';
   if (p === 'deepseek') return 'deepseek-chat';
+  if (p === 'bedrock') return process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-5-sonnet-20241022-v2:0';
   return process.env.DEFAULT_SCRIPT_MODEL || 'gpt-4o-mini';
 }
 

@@ -122,7 +122,25 @@ docker exec automaton_api env | grep -E "OPENAI|ANTHROPIC|DEEPSEEK|MISTRAL|SUNO|
 
 ## Phase 3 — Génération de texte (LLM)
 
-### 3.1 OpenAI
+### 3.1 AWS Bedrock (Claude — provider par défaut)
+
+```bash
+curl -s -X POST http://localhost:3000/ai/generate \
+  -H "Content-Type: application/json" \
+  -d '{"provider":"bedrock","prompt":"Réponds juste : ok","max_tokens":10}' | jq .
+```
+
+Attendu : `{ "text": "ok", ... }`
+
+### 3.2 Mistral
+
+```bash
+curl -s -X POST http://localhost:3000/ai/generate \
+  -H "Content-Type: application/json" \
+  -d '{"provider":"mistral","prompt":"Réponds juste : ok","max_tokens":10}' | jq .
+```
+
+### 3.3 OpenAI (si clé définie)
 
 ```bash
 curl -s -X POST http://localhost:3000/ai/generate \
@@ -130,9 +148,7 @@ curl -s -X POST http://localhost:3000/ai/generate \
   -d '{"provider":"openai","prompt":"Réponds juste : ok","max_tokens":10}' | jq .
 ```
 
-Attendu : `{ "text": "ok", ... }`
-
-### 3.2 Anthropic
+### 3.4 Anthropic (si clé définie)
 
 ```bash
 curl -s -X POST http://localhost:3000/ai/generate \
@@ -140,20 +156,12 @@ curl -s -X POST http://localhost:3000/ai/generate \
   -d '{"provider":"anthropic","prompt":"Réponds juste : ok","max_tokens":10}' | jq .
 ```
 
-### 3.3 DeepSeek (si clé définie)
+### 3.5 DeepSeek (si clé définie)
 
 ```bash
 curl -s -X POST http://localhost:3000/ai/generate \
   -H "Content-Type: application/json" \
   -d '{"provider":"deepseek","prompt":"Réponds juste : ok","max_tokens":10}' | jq .
-```
-
-### 3.4 Mistral (si clé définie)
-
-```bash
-curl -s -X POST http://localhost:3000/ai/generate \
-  -H "Content-Type: application/json" \
-  -d '{"provider":"mistral","prompt":"Réponds juste : ok","max_tokens":10}' | jq .
 ```
 
 ---
@@ -168,13 +176,13 @@ curl -s -X POST http://localhost:3000/ai/generate-script \
   -d '{
     "profil": "actu-ia",
     "topic": "GPT-5 vient de sortir",
-    "provider": "openai"
+    "provider": "bedrock"
   }' | jq '{project_id, status, profil, provider, parse_error: .script.parse_error}'
 ```
 
 Attendu : `status: "script_generated"`, `parse_error` absent ou `false`.
 
-### 4.2 Script profil dark-psychology (Claude)
+### 4.2 Script profil dark-psychology (Mistral)
 
 ```bash
 curl -s -X POST http://localhost:3000/ai/generate-script \
@@ -182,7 +190,7 @@ curl -s -X POST http://localhost:3000/ai/generate-script \
   -d '{
     "profil": "dark-psychology",
     "topic": "La manipulation par le silence",
-    "provider": "anthropic",
+    "provider": "mistral",
     "max_tokens": 2048
   }' | jq '{project_id, status, profil, provider}'
 ```
@@ -208,7 +216,7 @@ curl -s -X POST http://localhost:3000/ai/fact-check \
   -d '{
     "claims": ["ChatGPT a été lancé par OpenAI en novembre 2022"],
     "profil": "actu-ia",
-    "provider": "anthropic"
+    "provider": "bedrock"
   }' | jq '{block_publication, results: [.results[] | {status, confidence, block_publication}]}'
 ```
 
@@ -222,7 +230,7 @@ curl -s -X POST http://localhost:3000/ai/fact-check \
   -d '{
     "claims": ["Elon Musk a fondé OpenAI et en reste PDG en 2025"],
     "profil": "documentaire",
-    "provider": "anthropic"
+    "provider": "bedrock"
   }' | jq '{block_publication, results: [.results[] | {status, confidence, block_publication}]}'
 ```
 
@@ -240,7 +248,7 @@ curl -s -X POST http://localhost:3000/ai/seo \
     "profil": "dark-psychology",
     "platforms": ["youtube", "tiktok"],
     "language": "fr",
-    "provider": "openai"
+    "provider": "bedrock"
   }' | jq '{status, profil, seo: {titles: .seo.titles, hashtags: .seo.hashtags}}'
 ```
 
@@ -700,7 +708,7 @@ curl -s "http://localhost:3000/content/raw-items?profil=actu-ia&limit=1" | jq '{
 | 0 | Déploiement + SQL | `4 tables` dans `shared.*`, log `Analytics worker started` |
 | 1 | Infrastructure | `7/7` services actifs, `/health` → `ok` |
 | 2 | Variables d'env | Clés visibles dans `env` |
-| 3 | LLM texte | `text` présent dans la réponse pour chaque provider |
+| 3 | LLM texte (Bedrock+Mistral) | `text` présent dans la réponse pour chaque provider |
 | 4 | Agent Rédacteur | `status: script_generated`, `metadata.json` créé |
 | 5 | Fact-checking | `block_publication: false` sur vraie info, `true` sur fausse |
 | 6 | SEO | `titles` (3 items), `hashtags` présents |
