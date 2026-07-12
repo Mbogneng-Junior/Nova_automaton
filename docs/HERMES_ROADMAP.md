@@ -300,6 +300,46 @@ Hermes est le point d'entrée unique. Tout feedback passe par lui, est analysé,
 - [ ] **Mettre en place un rituel mensuel** de revue et validation des skills générés
 - [ ] **Documenter les rituels** : feedback quotidien, revue analytics hebdo, mise à jour skills mensuelle
 
+### Phase E — Hermes comme développeur autonome (semaine 6+)
+
+> **Vision** : Hermes obtient un accès en **lecture/écriture** au repo GitHub. Il peut créer,
+> modifier et pousser des workflows n8n, des prompts, des briques `_shared/`, et même du code
+> API. Un pipeline CI/CD valide et déplore automatiquement ses changements.
+
+- [ ] **Donner à Hermes un token GitHub** (scoped, fine-grained) avec accès au repo
+- [ ] **Configurer Hermes pour utiliser `git`** (déjà disponible dans son conteneur)
+- [ ] **Définir les règles d'autonomie** :
+  - Hermes peut créer/éditer des workflows n8n dans `workflows/`
+  - Hermes peut éditer des prompts dans `workflows/_shared/prompts/`
+  - Hermes peut créer des skills dans `data/hermes-home/skills/`
+  - Hermes **ne peut pas** toucher à `services/`, `docker-compose.yml`, `.env` sans validation humaine
+- [ ] **Mettre en place un pipeline CI/CD** :
+  - Push → GitHub Actions : lint + tests + build Docker
+  - Si tests passent → auto-deploy sur le droplet (via SSH ou webhook)
+  - Si tests échouent → Hermes reçoit le feedback et corrige
+- [ ] **Mode dry-run pour les workflows générés** : tout nouveau workflow n8n créé par Hermes
+  démarre en `dry_run=true`. Passage en prod seulement après validation humaine (Telegram).
+- [ ] **Audit trail** : chaque push d'Hermes est taggé `[hermes]` dans le commit message.
+  Revue hebdomadaire des changements autonomes.
+
+```text
+Hermes détecte un besoin
+    │
+    ├──► Crée/modifie un workflow n8n (.json)
+    ├──► Crée/modifie un prompt (.md)
+    ├──► git commit -m "[hermes] add workflow X for profil Y"
+    ├──► git push
+    │
+    ▼
+GitHub Actions CI
+    │
+    ├──► Lint + tests
+    ├──► Build Docker
+    │
+    ├──► Succès → Auto-deploy droplet → Hermes notifie Telegram
+    └──► Échec   → Feedback → Hermes corrige et re-push
+```
+
 ---
 
 ## 8. Métriques de succès
@@ -317,6 +357,13 @@ Hermes est le point d'entrée unique. Tout feedback passe par lui, est analysé,
 - **Skills qui dérivent** : un mauvais feedback peut créer une règle nocive. Prévoir un `confidence_score` et une validation humaine avant application.
 - **Coût API** : la veille et la self-evolution consomment des tokens. Démarrer avec des cron espacés.
 - **Sécurité** : les skills écrits par Hermes doivent être audités avant de toucher à la production (pas de auto-deploy).
+- **Hermes développeur autonome** :
+  - Token GitHub scoped (fine-grained) — accès limité aux dossiers `workflows/` et `workflows/_shared/prompts/`.
+  - **Jamais** d'accès à `services/`, `docker-compose.yml`, `.env`.
+  - CI/CD obligatoire : aucun push d'Hermes ne déplore sans que les tests passent.
+  - Mode dry-run par défaut pour tout nouveau workflow généré.
+  - Revue hebdomadaire des commits `[hermes]` — possibilité de revert rapidement.
+  - Limiter le rate de push (ex: max 5 push/jour) pour éviter une boucle de correction infinie.
 
 ---
 
