@@ -1,4 +1,20 @@
-# Validation humaine (HITL) via WhatsApp
+# Validation humaine (HITL) — Telegram via Hermes (primaire) + WhatsApp (secondaire)
+
+> **Architecture cible** : le HITL passe par **Hermes** (Telegram primaire). Les briques
+> WhatsApp/Green API ci-dessous sont conservées comme **canal secondaire** pour les
+> notifications simples et le fallback. À terme, Hermes gère le HITL de manière autonome
+> avec mémoire, interprétation naturelle des retours, et création de skills.
+
+## Canaux HITL
+
+| Canal | Rôle | Statut |
+|---|---|---|
+| **Telegram via Hermes** | Interface principale riche (boutons, médias, mémoire, feedback structuré) | Cible |
+| **WhatsApp (Green API)** | Notifications simples, fallback | Livré (briques ci-dessous) |
+
+---
+
+## Briques WhatsApp (canal secondaire — legacy)
 
 Brique réutilisable permettant à **n'importe quel pipeline** de demander ta validation sur
 WhatsApp et de **mettre l'exécution en pause** jusqu'à ta réponse. Rien ne se publie sans ton

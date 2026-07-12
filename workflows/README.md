@@ -46,6 +46,10 @@ workflows/<workflow-name>/
 - **`personal/chatbot/`** : chatbot WhatsApp personnel (Bedrock Claude)
 - **`_templates/pipeline-template/`** : squelette pour créer un nouveau pipeline
 
+> **Note** : les workflows `.json` dans ce dossier sont des **exports legacy** conservés pour
+> référence et réutilisation ponctuelle. À terme, Hermes crée et gère ses propres workflows n8n
+> de manière autonome. n8n exécute réellement depuis sa base Postgres, pas depuis ces fichiers.
+
 ## Ajouter un pipeline
 
 1. `cp -r workflows/_templates/pipeline-template workflows/content/mon-pipeline`.

@@ -39,32 +39,39 @@ distribution** l'adapte vers N canaux (format 16:9 vs 9:16, langue, ton, hashtag
 
 ---
 
-## 3. Qui fait quoi : n8n vs Hermes
+## 3. Qui fait quoi : Hermes vs n8n
 
-- **n8n = le chef d'orchestre / la plomberie** : cron, webhooks, appels API, files d'attente,
-  retries, intégrations. Déterministe.
-- **Hermes = le cerveau / l'agent / l'interface conversationnelle** : raisonnement multi-étapes,
-  navigation web, recherche de tendances, analyse de sentiment, réécriture de script, **mémoire
-  persistante**, **création de skills**, et dialogue multi-canaux (Telegram, WhatsApp, Discord,
-  Slack, Email, HCI).
+- **Hermes = le cerveau + le chef d'orchestre** : raisonnement multi-étapes, navigation web,
+  recherche de tendances, analyse de sentiment, réécriture de script, **mémoire persistante**,
+  **création de skills**, dialogue multi-canaux (Telegram primaire, WhatsApp secondaire,
+  Discord, Slack, Email, HCI). **Hermes déclenche et pilote les workflows n8n** — il peut même
+  créer ses propres workflows pertinents en fonction des besoins.
+- **n8n = la plomberie / l'exécution déterministe** : cron, webhooks, appels API, files d'attente,
+  retries, intégrations. n8n exécute ce qu'Hermes lui demande.
 - **Ils se parlent en réseau Docker privé** (`automaton_network`) : n8n appelle
   `http://hermes:8123/v1/...`, Hermes appelle `http://n8n:5678/webhook/...`.
   Détails : `docs/HERMES_INTEGRATION.md` et `docs/HERMES_ROADMAP.md`.
+
+> **Vision** : les workflows `.json` dans `workflows/` sont des **exports legacy** conservés
+> pour référence et réutilisation ponctuelle. À terme, Hermes crée et gère ses propres
+> workflows n8n de manière autonome.
 
 ---
 
 ## 4. Validation humaine (Human-in-the-loop)
 
-**Rien de sensible ne se publie sans ton feu vert.** Le canal d'approbation universel est
-**WhatsApp** (via Green API, déjà en place). À terme, Hermes permettra un **HITL multi-canaux**
-(Telegram, WhatsApp, Discord, Slack, Email) avec mémoire et interprétation des retours.
-Chaque pipeline a des **portes** :
+**Rien de sensible ne se publie sans ton feu vert.** Le canal d'approbation principal est
+**Telegram via Hermes** (interface riche, boutons, mémoire, interprétation naturelle des retours).
+**WhatsApp** (Green API) est conservé comme **canal secondaire** — les briques existantes
+(`tool-hitl-approval`, `tool-hitl-reply-router`) restent fonctionnelles pour les notifications
+simples et le fallback.
+
+Hermes interprète les retours au-delà du oui/non (ex : "rends le hook plus court" → feedback
+structuré → skill persistant). Chaque pipeline a des **portes** :
 
 ```
 Idée → [valider concept/script] → Assets → [valider audio/vidéo] → [valider date + canaux] → Publication
 ```
-
-La brique `_shared/n8n/tool-hitl-approval` standardise ce comportement.
 
 ---
 

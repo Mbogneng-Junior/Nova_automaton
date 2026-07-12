@@ -83,14 +83,14 @@ L'Agent Média peut privilégier le stock libre avant de générer une image IA.
 ## Fact-checking
 
 - **Endpoint** : `POST http://api:3000/ai/fact-check` `{ claims: [...], profil?, provider? }`.
-- **Provider par défaut** : `FACT_CHECK_PROVIDER=anthropic`.
+- **Provider par défaut** : `FACT_CHECK_PROVIDER=bedrock` (Claude Sonnet 4.6 via AWS Bedrock).
 - **Sortie** : JSON `{ status, confidence, reasoning, sources_needed, block_publication }` par claim.
 - **Règle documentaire** : `block_publication: true` si le statut n'est pas `confirmed` pour un profil `documentaire`.
 
 ## SEO
 
 - **Endpoint** : `POST http://api:3000/ai/seo` `{ topic?, script?, platforms?, profil?, language?, provider? }`.
-- **Provider par défaut** : `SEO_PROVIDER=openai`.
+- **Provider par défaut** : `SEO_PROVIDER=bedrock` (Claude Sonnet 4.6 via AWS Bedrock).
 - **Sortie** : 3 variantes de titre + metadata par plateforme (YouTube, TikTok, Instagram) + top hashtags.
 
 ## Contrôle Qualité
@@ -109,14 +109,18 @@ L'Agent Média peut privilégier le stock libre avant de générer une image IA.
 
 ## Hermes comme orchestrateur conversationnel
 
-Hermes est le **cerveau** du système, pas seulement un fournisseur LLM. Il reçoit les messages de l'utilisateur sur plusieurs canaux, comprend les intentions, déclenche les briques `_shared`, et apprend des feedbacks.
+Hermes est le **cerveau + chef d'orchestre** du système. Il reçoit les messages de l'utilisateur, comprend les intentions, déclenche les briques `_shared` via n8n, et apprend des feedbacks pour créer des skills persistants.
 
-- **Canaux supportés** : Telegram, WhatsApp, Discord, Slack, Email, HCI web, CLI.
-- **Rôle** : interface humaine, veille active, scoring, création de skills, HITL 2.0.
-- **Briques liées** : `tool-analyze-trends`, `tool-analyze-performance`, `tool-learn-from-feedback`, `tool-hermes-router`.
+- **Canal primaire** : **Telegram** (interface riche, boutons, threads, médias).
+- **Canal secondaire** : WhatsApp (Green API, déjà en place pour notifications simples et fallback).
+- **Rôle** : interface humaine, veille active, scoring, création de skills, HITL 2.0, **création autonome de workflows n8n**.
+- **Briques liées** : `tool-analyze-trends`, `tool-analyze-performance`, `tool-learn-from-feedback`, `tool-hermes-router` (à créer).
 - **Doc détaillée** : `docs/HERMES_ROADMAP.md` et `docs/HERMES_INTEGRATION.md`.
 
-> **Modèle cible** : tu dis à Hermes *"Génère un script actu-ia sur GPT-5.5, angle débutant"*, il déclenche `tool-generate-script`, puis te propose la validation via Telegram/WhatsApp.
+> **Vision** : les workflows `.json` dans `workflows/` sont des **exports legacy** conservés pour
+> référence et réutilisation ponctuelle. À terme, Hermes crée et gère ses propres workflows n8n
+> de manière autonome. Tu dis à Hermes *"Génère un script actu-ia sur GPT-5.5, angle débutant"*, il
+> déclenche `tool-generate-script`, puis te propose la validation via Telegram.
 
 ## Génération audio & sous-titres
 

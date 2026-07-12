@@ -104,12 +104,14 @@ Intégrer le repo `hermes-agent-self-evolution` pour :
 - Tester en dry-run
 - Déployer les meilleures versions
 
-### 3.6. HITL unifié via WhatsApp
+### 3.6. HITL unifié via Telegram (primaire) + WhatsApp (secondaire)
 
-Puisque Hermes supporte WhatsApp et qu'on a déjà Green API pour le HITL :
-- Utiliser Hermes pour **envoyer des demandes de validation enrichies** (ex : résumé + lien vidéo + 3 options)
+Puisque Hermes supporte Telegram nativement et qu'on a déjà Green API pour le HITL WhatsApp :
+- **Telegram via Hermes** = canal **primaire** : interface riche (boutons, médias, threads), mémoire, interprétation naturelle des retours
+- **WhatsApp (Green API)** = canal **secondaire** : notifications simples, fallback, déjà en place
 - Utiliser Hermes pour **interpréter les réponses humaines** au-delà de simples oui/non (ex : "rends le hook plus court" → feedback structuré)
 - Stocker les réponses dans `shared.hitl_approvals` et `shared.feedback`
+- Les briques `tool-hitl-approval` et `tool-hitl-reply-router` (WhatsApp) restent fonctionnelles en fallback
 
 ---
 
@@ -217,15 +219,17 @@ Utilisateur (Telegram/WhatsApp/Discord/Slack/Email)
          │
          ├──► Si question/feedback → répond + stocke dans shared.feedback
          │
-         ├──► Si validation requise → HITL (WhatsApp/Telegram)
+         ├──► Si validation requise → HITL (Telegram primaire / WhatsApp fallback)
          │
          └──► Si veille/proposition → insère dans shared.raw_items
 ```
 
 ### 5.4. Différence avec le HITL WhatsApp actuel
 
-| | HITL WhatsApp actuel | Hermes comme interface centrale |
+| | HITL WhatsApp actuel (legacy) | Hermes comme interface centrale |
 |---|---|---|
+| **Canal primaire** | WhatsApp (Green API) | **Telegram** via Hermes |
+| **Canal secondaire** | — | WhatsApp (Green API, fallback) |
 | **Déclenchement** | Workflow n8n envoie une demande | Hermes peut proposer activement |
 | **Format** | Oui/non/correction simple | Conversation naturelle, contexte, mémoire |
 | **Canaux** | WhatsApp uniquement | Multi-canaux (Telegram, Discord, Slack, etc.) |
@@ -273,6 +277,7 @@ Hermes est le point d'entrée unique. Tout feedback passe par lui, est analysé,
 - [ ] **Créer le bot Telegram** via @BotFather et le connecter à Hermes
 - [ ] **Tester le dialogue** Telegram → Hermes → n8n → réponse
 - [ ] **Documenter les commandes** utilisateur (générer, valider, critiquer, publier, analytics)
+- [ ] **Migrer le HITL** de WhatsApp vers Telegram via Hermes (WhatsApp reste en fallback)
 
 ### Phase B — Stockage et feedback (semaine 2)
 

@@ -40,17 +40,24 @@ Produire, optimiser et publier du contenu sur les réseaux sociaux **avec valida
 
 ## Stack déployée
 
-- **n8n** : orchestration des workflows
-- **Hermes** : agent IA conversationnel, mémoire, skills, veille
+- **Hermes** : agent IA conversationnel (cerveau + chef d'orchestre), mémoire persistante, skills, veille, HITL via Telegram
+- **n8n** : exécution déterministe des workflows (cron, webhooks, API, queues) — piloté par Hermes
+- **AWS Bedrock** : provider LLM principal (Claude Opus 4.6 pour scripts, Sonnet 4.6 pour fact-check/SEO, Haiku 4.5 pour chat)
+- **Mistral** : provider LLM secondaire (chatbot, tâches simples)
 - **PostgreSQL** : base de données n8n + analytics + feedback
 - **Redis** : queue BullMQ
-- **API Node.js** : endpoints métiers pour FFmpeg, upload, analytics
+- **API Node.js** : endpoints métiers pour FFmpeg, upload, analytics, génération LLM
 - **FFmpeg worker** : rendu vidéo, Shorts, sous-titres
 - **Nginx + Certbot** : HTTPS, reverse proxy
 
 ## Workflows inclus
 
-- **`music-ai`** : génération de tracks IA, covers, vidéos, Shorts, upload et analytics.
+- **`content/music-ai/`** : génération de tracks IA, covers, vidéos, Shorts, upload et analytics.
+- **`content/psychologie/`** : (à venir) chaîne psychologie / dark psychology pour valider le pipeline complet.
+- **`personal/chatbot/`** : chatbot WhatsApp personnel.
+
+> **Note** : les workflows `.json` dans `workflows/` sont des exports legacy conservés pour
+> référence. À terme, Hermes crée et gère ses propres workflows n8n de manière autonome.
 
 ## 📚 Documentation
 
@@ -190,10 +197,12 @@ nano workflows/content/mon-workflow/README.md
 
 ### ✅ Fonctionnalités déployées
 - Infrastructure Docker complète (7 services)
-- n8n orchestrateur avec workflows music-ai
-- Hermes Agent (Bedrock Claude) avec HCI
-- API métier avec endpoints FFmpeg, publication, génération d'images
-- Validation humaine (HITL) via WhatsApp
+- Hermes Agent (cerveau + chef d'orchestre) avec HCI
+- AWS Bedrock comme provider LLM principal (Claude Opus/Sonnet/Haiku par tâche)
+- Mistral comme provider LLM secondaire
+- n8n orchestrateur avec workflows music-ai (legacy, migration vers Hermes en cours)
+- API métier avec endpoints FFmpeg, publication, génération d'images, LLM multi-provider
+- Validation humaine (HITL) — WhatsApp (Green API) en place, migration Telegram via Hermes prévue
 - Base de données PostgreSQL avec schémas par workflow
 - Redis + BullMQ pour les queues
 
@@ -211,8 +220,7 @@ nano workflows/content/mon-workflow/README.md
 |---------|-----|
 | n8n Workflows | https://n8n.automaton.neurenova.tech |
 | Hermes HCI | https://hermes.automaton.neurenova.tech |
-| API Métier | http://
-:3000 (interne) |
+| API Métier | http://127.0.0.1:3000 (interne) |
 
 ## 🆘 Support
 
