@@ -1648,7 +1648,7 @@ Réponds UNIQUEMENT avec un objet JSON structuré ainsi:
       model: model || (selectedProvider === 'bedrock' ? BEDROCK_MODELS.seo() : 'gpt-4o-mini'),
       prompt,
       temperature: 0.7,
-      max_tokens: 1500,
+      max_tokens: 4096,
       task: 'seo'
     });
 
