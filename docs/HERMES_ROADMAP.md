@@ -305,6 +305,24 @@ Hermes est le point d'entrée unique. Tout feedback passe par lui, est analysé,
 > **Vision** : Hermes obtient un accès en **lecture/écriture** au repo GitHub. Il peut créer,
 > modifier et pousser des workflows n8n, des prompts, des briques `_shared/`, et même du code
 > API. Un pipeline CI/CD valide et déplore automatiquement ses changements.
+>
+> **Approche progressive** : au début, Hermes travaille en mode **interactif** — il propose des
+> changements, tu valides chaque push via Telegram. Ce n'est qu'une fois qu'il fournit des
+> résultats **bons et stables** de manière constante que tu lui accordes **progressivement** plus
+> d'autonomie (auto-push sur certains dossiers, puis auto-deploy, etc.). La confiance se gagne
+> sur plusieurs itérations réussies.
+
+#### Niveaux d'autonomie (à franchir séquentiellement)
+
+| Niveau | Ce qu'Hermes peut faire | Validation requise |
+|---|---|---|
+| **1. Suggestion** | Hermes propose un workflow/prompt → tu valides manuellement chaque push | Oui (Telegram) |
+| **2. Auto-push limité** | Hermes push directement sur `workflows/` et `prompts/` | Non, mais revue hebdo |
+| **3. Auto-deploy workflows** | Push → CI passe → deploy automatique des workflows n8n | Non, mais dry-run par défaut |
+| **4. Autonomie complète** | Hermes crée, teste, déploie et améliore ses workflows seul | Revue mensuelle uniquement |
+
+> **Règle** : on ne passe au niveau supérieur qu'après N itérations réussies sans intervention
+> humaine au niveau actuel. Pas de saut de niveau.
 
 - [ ] **Donner à Hermes un token GitHub** (scoped, fine-grained) avec accès au repo
 - [ ] **Configurer Hermes pour utiliser `git`** (déjà disponible dans son conteneur)
