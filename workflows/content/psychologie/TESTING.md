@@ -14,7 +14,7 @@ curl -X POST http://localhost:3000/ai/generate-script \
     "topic": "Les 5 techniques de manipulation que tout le monde devrait connaître",
     "provider": "bedrock",
     "project_id": "psy_test_001",
-    "max_tokens": 4096,
+    "max_tokens": 8192,
     "temperature": 0.8
   }'
 ```
@@ -127,7 +127,7 @@ API="http://localhost:3000"
 
 echo "=== 1. Script ==="
 SCRIPT=$(curl -s -X POST $API/ai/generate-script -H "Content-Type: application/json" \
-  -d "{\"profil\":\"dark-psychology\",\"topic\":\"Les 5 techniques de manipulation\",\"provider\":\"bedrock\",\"project_id\":\"$PROJECT_ID\",\"max_tokens\":4096}")
+  -d "{\"profil\":\"dark-psychology\",\"topic\":\"Les 5 techniques de manipulation\",\"provider\":\"bedrock\",\"project_id\":\"$PROJECT_ID\",\"max_tokens\":8192}")
 echo "$SCRIPT" | jq '.status, .project_id'
 
 echo "=== 2. Image ==="

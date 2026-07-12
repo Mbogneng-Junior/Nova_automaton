@@ -203,7 +203,7 @@ async function generateScript({ profil, topic, context, provider, model, promptT
     model: model || resolveScriptModel(selectedProvider),
     prompt: fullPrompt,
     temperature: temperature !== undefined ? Number(temperature) : 0.8,
-    max_tokens: max_tokens !== undefined ? Number(max_tokens) : 2048,
+    max_tokens: max_tokens !== undefined ? Number(max_tokens) : 8192,
     task: 'script'
   });
 
