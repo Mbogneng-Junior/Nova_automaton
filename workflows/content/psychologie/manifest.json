@@ -1,0 +1,61 @@
+{
+  "$schema": "../../_templates/manifest.template.json",
+  "id": "psychologie",
+  "theme": "psychologie",
+  "category": "content",
+  "description": "Chaîne psychologie / dark psychology : vidéos long-format sur les dynamiques de pouvoir, manipulation et résilience mentale.",
+  "status": "draft",
+  "owner": "mbogneng-junior",
+  "version": 1,
+
+  "triggers": [
+    { "type": "hermes", "ref": "telegram", "note": "Hermes reçoit la demande via Telegram et orchestre le pipeline" },
+    { "type": "webhook", "ref": "psychologie-starter", "note": "POST déclenché par n8n (legacy/fallback)" }
+  ],
+
+  "uses_bricks": [
+    "tool-generate-script",
+    "tool-generate-image",
+    "tool-generate-speech",
+    "tool-generate-subtitles",
+    "tool-render-video",
+    "tool-fact-check",
+    "tool-seo",
+    "tool-hitl-approval",
+    "tool-publish"
+  ],
+
+  "approval_gates": [
+    { "step": "script", "channel": "telegram", "required": true, "note": "Hermes propose le script via Telegram, validation avant génération des assets" },
+    { "step": "video", "channel": "telegram", "required": true, "note": "Aperçu vidéo rendu, validation avant publication" },
+    { "step": "publish", "channel": "telegram", "required": true, "note": "Confirmation finale avant upload sur les plateformes" }
+  ],
+
+  "channels": ["psychologie-youtube-fr", "psychologie-tiktok-fr"],
+
+  "services": {
+    "api_endpoints": ["/ai/generate-script", "/ai/generate-image", "/ai/generate-speech", "/ai/generate-subtitles", "/ai/fact-check", "/ai/seo", "/jobs/ffmpeg", "/publish"],
+    "queues": ["ffmpeg"],
+    "db_schema": "psychologie"
+  },
+
+  "env_required": [
+    "BEDROCK_SCRIPT_MODEL",
+    "BEDROCK_FACTCHECK_MODEL",
+    "BEDROCK_SEO_MODEL",
+    "ELEVENLABS_API_KEY",
+    "ELEVENLABS_VOICE_ID",
+    "WHISPER_MODEL",
+    "IMAGE_PROVIDER",
+    "YOUTUBE_CLIENT_ID",
+    "YOUTUBE_CLIENT_SECRET",
+    "YOUTUBE_REFRESH_TOKEN"
+  ],
+
+  "files": {
+    "n8n": "n8n/*.json",
+    "prompts": "prompts/*.md",
+    "templates": "templates/*.json",
+    "tests": "TESTING.md"
+  }
+}

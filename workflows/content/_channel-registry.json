@@ -80,6 +80,32 @@
         "outro": null,
         "watermark": null
       }
+    },
+    {
+      "id": "psychologie-tiktok-fr",
+      "theme": "psychologie",
+      "platform": "tiktok",
+      "language": "fr",
+      "status": "planned",
+      "account_ref": "TIKTOK_PSY_FR",
+      "publish": {
+        "tool": "tool-publish-tiktok",
+        "default_visibility": "draft",
+        "requires_approval": true
+      },
+      "adapter": {
+        "format": "9:16",
+        "max_duration_sec": 60,
+        "title_style": "hook_psychology",
+        "hashtags": ["#psychologie", "#fyp", "#manipulation", "#darkpsychology"]
+      },
+      "brand_kit": {
+        "palette": ["#1b2a4a", "#e8c170"],
+        "tone": "hook mystérieux 3 premieres secondes, révélation progressive",
+        "intro": null,
+        "outro": null,
+        "watermark": null
+      }
     }
   ],
   "account_refs_note": "account_ref est une CLE LOGIQUE. Les secrets reels (tokens OAuth, refresh tokens) restent dans .env ou dans les credentials n8n. Ne jamais mettre de secret dans ce fichier (il est versionne sur git)."

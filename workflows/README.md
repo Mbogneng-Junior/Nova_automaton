@@ -43,6 +43,7 @@ workflows/<workflow-name>/
 ## Pipelines actuels
 
 - **`content/music-ai/`** : production musicale automatisée (Suno, Leonardo, YouTube, TikTok, etc.)
+- **`content/psychologie/`** : chaîne psychologie / dark psychology (script → image → TTS → FFmpeg → publish)
 - **`personal/chatbot/`** : chatbot WhatsApp personnel (Bedrock Claude)
 - **`_templates/pipeline-template/`** : squelette pour créer un nouveau pipeline
 
