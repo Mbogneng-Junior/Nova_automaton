@@ -118,9 +118,17 @@ function getBedrockClient() {
   return _bedrockClient;
 }
 
-async function generateWithBedrock({ model, prompt, temperature = 0.7, max_tokens = 1024 }) {
+const BEDROCK_MODELS = {
+  script:   () => process.env.BEDROCK_SCRIPT_MODEL    || process.env.BEDROCK_MODEL_ID || 'global.anthropic.claude-opus-4-6-v1',
+  factcheck:() => process.env.BEDROCK_FACTCHECK_MODEL || process.env.BEDROCK_MODEL_ID || 'global.anthropic.claude-sonnet-4-6',
+  seo:      () => process.env.BEDROCK_SEO_MODEL       || process.env.BEDROCK_MODEL_ID || 'global.anthropic.claude-sonnet-4-6',
+  chat:     () => process.env.BEDROCK_CHAT_MODEL      || process.env.BEDROCK_MODEL_ID || 'global.anthropic.claude-haiku-4-5-20251001-v1:0',
+  default:  () => process.env.BEDROCK_MODEL_ID                          || 'global.anthropic.claude-sonnet-4-6'
+};
+
+async function generateWithBedrock({ model, prompt, temperature = 0.7, max_tokens = 1024, task }) {
   const client = getBedrockClient();
-  const modelId = model || process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+  const modelId = model || (task && BEDROCK_MODELS[task] ? BEDROCK_MODELS[task]() : BEDROCK_MODELS.default());
 
   const payload = {
     anthropic_version: 'bedrock-2023-05-31',
@@ -158,7 +166,7 @@ function resolveScriptModel(provider) {
   if (p === 'anthropic') return 'claude-3-5-sonnet-20241022';
   if (p === 'mistral') return 'mistral-medium-latest';
   if (p === 'deepseek') return 'deepseek-chat';
-  if (p === 'bedrock') return process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+  if (p === 'bedrock') return BEDROCK_MODELS.script();
   return process.env.DEFAULT_SCRIPT_MODEL || 'gpt-4o-mini';
 }
 
@@ -195,7 +203,8 @@ async function generateScript({ profil, topic, context, provider, model, promptT
     model: model || resolveScriptModel(selectedProvider),
     prompt: fullPrompt,
     temperature: temperature !== undefined ? Number(temperature) : 0.8,
-    max_tokens: max_tokens !== undefined ? Number(max_tokens) : 2048
+    max_tokens: max_tokens !== undefined ? Number(max_tokens) : 2048,
+    task: 'script'
   });
 
   let script = {};
@@ -1554,9 +1563,10 @@ Réponds UNIQUEMENT avec un objet JSON ayant ces clés:
 - block_publication: true si le statut est "false" ou si le profil est "documentaire" et status != "confirmed"`;
 
       const aiText = await generate({
-        model: model || (selectedProvider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : 'gpt-4o'),
+        model: model || (selectedProvider === 'bedrock' ? BEDROCK_MODELS.factcheck() : selectedProvider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : 'gpt-4o'),
         prompt,
         temperature: 0.1,
+        task: 'factcheck',
         max_tokens: 512
       });
 
@@ -1620,10 +1630,11 @@ Réponds UNIQUEMENT avec un objet JSON structuré ainsi:
 }`;
 
     const aiText = await generate({
-      model: model || 'gpt-4o-mini',
+      model: model || (selectedProvider === 'bedrock' ? BEDROCK_MODELS.seo() : 'gpt-4o-mini'),
       prompt,
       temperature: 0.7,
-      max_tokens: 1500
+      max_tokens: 1500,
+      task: 'seo'
     });
 
     let seo = {};
