@@ -1117,7 +1117,8 @@ app.post('/ai/generate-script', async (req, res) => {
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(path.join(dir, 'metadata.json'), JSON.stringify(metadata, null, 2), 'utf8');
 
-    res.json({ project_id: projectId, status: 'script_generated', ...result });
+    const { provider: _p, profil: _pf, script, raw: _r } = result;
+    res.json({ project_id: projectId, status: 'script_generated', provider: _p, profil: _pf, script });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
