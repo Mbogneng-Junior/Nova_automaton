@@ -1,0 +1,38 @@
+{
+  "$schema": "../../_templates/pipeline-template/manifest.template.json",
+  "id": "chatbot",
+  "theme": "chatbot",
+  "category": "personal",
+  "description": "Chatbot WhatsApp personnel propulsé par Bedrock Claude via Hermes.",
+  "status": "active",
+  "owner": "mbogneng-junior",
+  "version": 1,
+
+  "triggers": [
+    { "type": "hermes", "ref": "whatsapp", "note": "Hermes reçoit les messages WhatsApp et répond" },
+    { "type": "webhook", "ref": "chatbot-webhook", "note": "Webhook Green API (legacy/fallback)" }
+  ],
+
+  "uses_bricks": [],
+
+  "approval_gates": [],
+
+  "channels": [],
+
+  "services": {
+    "api_endpoints": ["/ai/generate"],
+    "queues": [],
+    "db_schema": null
+  },
+
+  "env_required": [
+    "GREEN_API_2_INSTANCE_ID",
+    "GREEN_API_2_TOKEN",
+    "CHATBOT_AUTHORIZED_NUMBERS",
+    "BEDROCK_CHAT_MODEL"
+  ],
+
+  "files": {
+    "n8n": "n8n/*.json"
+  }
+}

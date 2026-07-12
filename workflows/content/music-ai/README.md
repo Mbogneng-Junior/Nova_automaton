@@ -1,33 +1,43 @@
-# Workflow : Music AI
+# Pipeline : Music AI
 
-Production musicale automatisée avec IA.
+Production musicale automatisée avec IA (Suno, Leonardo, ElevenLabs, YouTube, TikTok).
 
 ## Pipeline
 
-1. Idée depuis Google Sheet / Notion
-2. Génération de concept (OpenAI GPT-4o)
-3. Génération audio (Suno API)
-4. Stockage (S3 / Cloudinary)
-5. Génération cover (Leonardo AI)
-6. Rendu vidéo longue (FFmpeg)
-7. Découpage en Shorts (FFmpeg)
-8. Sous-titres (Whisper)
-9. Upload (YouTube, TikTok, Instagram)
-10. Analytics Loop
+```text
+Toi (Telegram) → Hermes
+    │
+    1. POST /ai/generate-script   (profil: music-ai, provider: bedrock)
+    2. [HITL] Validation du script via Telegram
+    3. Suno API                    (génération audio musical)
+    4. POST /ai/generate-image     (cover via Leonardo/OpenAI)
+    5. POST /jobs/ffmpeg           (render_long → vidéo 16:9)
+    6. POST /jobs/ffmpeg           (render_short → Shorts 9:16)
+    7. POST /ai/generate-subtitles (Whisper .srt)
+    8. [HITL] Validation de la vidéo via Telegram
+    9. POST /ai/seo                (titres, descriptions, tags)
+    10. POST /publish              (youtube + tiktok, dry_run → validation → real)
+```
+
+> **Note** : Suno est en pause pour le moment. La chaîne psychologie est utilisée pour valider
+> le pipeline complet en premier.
 
 ## Structure
 
 - `templates/song_metadata.json` : métadonnées d'une track
-- `prompts/` : prompts de génération
-- `n8n/` : workflows n8n exportés
+- `prompts/` : prompts spécifiques music-ai (concept, cover)
+- `n8n/` : workflows n8n exportés (legacy — Hermes créera les siens à terme)
 - `examples/` : exemples de tracks générées
 
-## Distributeurs musicaux
+## Canaux
 
-- DistroKid
-- TuneCore
+| Canal | Plateforme | Format | Statut |
+|---|---|---|---|
+| `music-ai-youtube-fr` | YouTube | 16:9, max 600s | active |
+| `music-ai-tiktok-fr` | TikTok | 9:16, max 60s | active |
 
-## Notes
+## Briques utilisées
 
-- Vérifier les CGU commerciales de chaque outil IA.
-- Prévoir un fallback si Suno n'est pas disponible.
+Toutes les capacités sont dans `workflows/_shared/` — ce pipeline ne recode rien.
+
+Voir `TESTING.md` pour les commandes curl de test.

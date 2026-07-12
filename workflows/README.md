@@ -7,16 +7,19 @@ Ce dossier contient les workflows d'automatisation exécutés par la stack Autom
 ```
 workflows/
 ├── _shared/         # Briques réutilisables par TOUS les pipelines (publication, validation, rendu...)
-├── _templates/      # Squelette + manifest.template.json pour créer un pipeline
+├── _templates/      # Template unique et officiel pour créer un pipeline
+│   └── pipeline-template/  # Squelette + manifest.template.json + TESTING.md template
 ├── content/         # Création de contenu réseaux sociaux
 │   ├── _channel-registry.json   # Registre des canaux (YT/TikTok/FB) + brand kit
 │   ├── music-ai/
-│   └── psychologie/             # (à venir)
+│   └── psychologie/
 ├── personal/        # Automatisations personnelles
 │   └── chatbot/
-├── domains/         # Autres domaines à venir
-└── exemple/         # Workflows de référence collectés
+└── domains/         # Autres domaines à venir
 ```
+
+> **Références n8n** : les exemples de workflows n8n collectés comme documentation
+> sont dans `docs/references/n8n-workflow-examples/`, pas dans `workflows/`.
 
 > **Règle clé** : un pipeline n'a PAS le droit de recoder une capacité déjà dans `_shared/`.
 > Voir `docs/CONVENTIONS.md` et `AGENTS.md` à la racine.
@@ -54,11 +57,12 @@ workflows/<workflow-name>/
 ## Ajouter un pipeline
 
 1. `cp -r workflows/_templates/pipeline-template workflows/content/mon-pipeline`.
-2. Copier `workflows/_templates/manifest.template.json` en `manifest.json` et le remplir.
+2. Copier `manifest.template.json` en `manifest.json` et le remplir.
 3. Éditer le `README.md`, les `prompts/` et les `templates/`.
-4. Construire les workflows dans n8n, puis les exporter dans `n8n/`.
-5. Réutiliser les briques de `_shared/` (ne pas recoder).
-6. Déclarer les canaux dans `content/_channel-registry.json`.
+4. Écrire les tests curl dans `TESTING.md`.
+5. Construire les workflows dans n8n, puis les exporter dans `n8n/` (legacy).
+6. Réutiliser les briques de `_shared/` (ne pas recoder).
+7. Déclarer les canaux dans `content/_channel-registry.json`.
 
 ## Bonnes pratiques
 

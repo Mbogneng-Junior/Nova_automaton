@@ -1,5 +1,5 @@
 {
-  "$schema": "../../_templates/manifest.template.json",
+  "$schema": "../../_templates/pipeline-template/manifest.template.json",
   "id": "psychologie",
   "theme": "psychologie",
   "category": "content",

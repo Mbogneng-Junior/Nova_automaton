@@ -20,7 +20,7 @@ Règles partagées pour garder Automaton maintenable à long terme. À lire apr�
 ## 2. Le `manifest.json` (contrat de chaque pipeline)
 
 Chaque pipeline DOIT avoir un `manifest.json` à sa racine (modèle :
-`workflows/_templates/manifest.template.json`). Il décrit, pour qu'un agent comprenne le
+`workflows/_templates/pipeline-template/manifest.template.json`). Il décrit, pour qu'un agent comprenne le
 pipeline sans lire tout le code :
 
 - `triggers` — comment il démarre (webhook, cron, whatsapp).

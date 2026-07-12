@@ -25,8 +25,10 @@ Produire, optimiser et publier du contenu sur les réseaux sociaux **avec valida
 │   └── ffmpeg-worker/          # Worker FFmpeg Python
 ├── workflows/                  # Workflows métier
 │   ├── README.md
-│   ├── music-ai/               # Production musicale IA
-│   └── workflow-template/      # Squelette pour nouveaux workflows
+│   ├── _shared/                # Briques réutilisables (publication, HITL, rendu...)
+│   ├── _templates/             # Template unique pour créer un pipeline
+│   ├── content/                # Pipelines de contenu (music-ai, psychologie)
+│   └── personal/               # Automatisations perso (chatbot)
 ├── docs/                       # Documentation
 │   ├── ARCHITECTURE.md
 │   └── DEPLOYMENT.md
@@ -169,7 +171,7 @@ node scripts/get-youtube-token.js
 cp -r workflows/_templates/pipeline-template workflows/content/mon-workflow
 
 # Copier et remplir le manifest
-cp workflows/_templates/manifest.template.json workflows/content/mon-workflow/manifest.json
+cp workflows/_templates/pipeline-template/manifest.template.json workflows/content/mon-workflow/manifest.json
 
 # Éditer le README et les prompts
 nano workflows/content/mon-workflow/README.md
