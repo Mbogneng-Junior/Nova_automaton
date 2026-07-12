@@ -211,8 +211,15 @@ async function generateScript({ profil, topic, context, provider, model, promptT
   let raw = aiText;
   try {
     // Tentative d'extraction si le LLM a mis du JSON dans du markdown
-    const jsonMatch = aiText.match(/```json\s*([\s\S]*?)\s*```|(\{[\s\S]*\})/);
-    const jsonString = jsonMatch ? (jsonMatch[1] || jsonMatch[2]) : aiText;
+    const jsonMatch = aiText.match(/```json\s*([\s\S]*?)```/);
+    let jsonString;
+    if (jsonMatch) {
+      jsonString = jsonMatch[1];
+    } else {
+      const firstBrace = aiText.indexOf('{');
+      const lastBrace = aiText.lastIndexOf('}');
+      jsonString = (firstBrace !== -1 && lastBrace !== -1) ? aiText.slice(firstBrace, lastBrace + 1) : aiText;
+    }
     script = JSON.parse(jsonString.trim());
     raw = aiText;
   } catch (e) {
@@ -1572,8 +1579,16 @@ Réponds UNIQUEMENT avec un objet JSON ayant ces clés:
 
       let parsed = {};
       try {
-        const m = aiText.match(/```json\s*([\s\S]*?)\s*```|(\{[\s\S]*\})/);
-        parsed = JSON.parse(m ? (m[1] || m[2]) : aiText.trim());
+        const m = aiText.match(/```json\s*([\s\S]*?)```/);
+        let jsonStr;
+        if (m) {
+          jsonStr = m[1];
+        } else {
+          const firstBrace = aiText.indexOf('{');
+          const lastBrace = aiText.lastIndexOf('}');
+          jsonStr = (firstBrace !== -1 && lastBrace !== -1) ? aiText.slice(firstBrace, lastBrace + 1) : aiText;
+        }
+        parsed = JSON.parse(jsonStr.trim());
       } catch (e) {
         parsed = { status: 'needs_review', confidence: 0, reasoning: aiText, block_publication: false };
       }
@@ -1639,8 +1654,18 @@ Réponds UNIQUEMENT avec un objet JSON structuré ainsi:
 
     let seo = {};
     try {
-      const m = aiText.match(/```json\s*([\s\S]*?)\s*```|(\{[\s\S]*\})/);
-      seo = JSON.parse(m ? (m[1] || m[2]) : aiText.trim());
+      const m = aiText.match(/```json\s*([\s\S]*?)```/);
+      if (m) {
+        seo = JSON.parse(m[1].trim());
+      } else {
+        const firstBrace = aiText.indexOf('{');
+        const lastBrace = aiText.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1) {
+          seo = JSON.parse(aiText.slice(firstBrace, lastBrace + 1));
+        } else {
+          seo = JSON.parse(aiText.trim());
+        }
+      }
     } catch (e) {
       seo = { raw: aiText };
     }
