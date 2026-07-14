@@ -1,6 +1,7 @@
 #!/bin/bash
 # Configuration du bot Telegram pour Hermes
 # À exécuter sur le droplet après avoir créé le bot via @BotFather
+# Doc: https://hermes-agent.nousresearch.com/docs/user-guide/messaging/telegram
 
 set -e
 
@@ -22,14 +23,33 @@ if [ -z "$BOT_TOKEN" ]; then
     exit 1
 fi
 
+# Demander le user ID Telegram
+echo ""
+echo "Pour trouver ton Telegram User ID :"
+echo "  - Message @userinfobot sur Telegram → il répond avec ton ID numérique"
+echo "  - Ou @get_id_bot"
+echo ""
+read -p "Colle ton Telegram User ID (numérique): " USER_ID
+
+if [ -z "$USER_ID" ]; then
+    echo "WARNING: Pas de User ID. Hermes répondra à tout le monde (non recommandé)."
+    USER_ID=""
+fi
+
 echo ""
 echo "Configuration de Hermes avec le token Telegram..."
 
-# Configurer le bot Telegram dans Hermes
-docker exec automaton_hermes hermes config set platforms.telegram.bot_token "$BOT_TOKEN" 2>/dev/null || {
-    echo "WARNING: La commande 'hermes config set' a échoué."
-    echo "Essai via le fichier de config directement..."
-}
+# Hermes utilise ~/.hermes/.env pour la config Telegram (pas hermes config set)
+ENV_FILE="/home/hermes/.hermes/.env"
+
+# Créer ou mettre à jour le fichier .env dans le container
+docker exec automaton_hermes bash -c "touch '$ENV_FILE' && \
+    sed -i '/^TELEGRAM_BOT_TOKEN=/d' '$ENV_FILE' && \
+    sed -i '/^TELEGRAM_ALLOWED_USERS=/d' '$ENV_FILE' && \
+    echo 'TELEGRAM_BOT_TOKEN=$BOT_TOKEN' >> '$ENV_FILE' && \
+    echo 'TELEGRAM_ALLOWED_USERS=$USER_ID' >> '$ENV_FILE'"
+
+echo "  ✓ Token et User ID écrits dans $ENV_FILE"
 
 # Redémarrer Hermes pour activer Telegram
 echo "Redémarrage de Hermes..."
