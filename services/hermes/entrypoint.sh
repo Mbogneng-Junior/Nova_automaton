@@ -15,6 +15,34 @@ mkdir -p "$HOME/.hermes"
 [ -e "$HOME/.hermes/hermes-agent" ] || ln -sf /opt/hermes-agent "$HOME/.hermes/hermes-agent"
 [ -e "$HOME/.hermes/hci" ]          || ln -sf /opt/hci          "$HOME/.hermes/hci"
 
+# Seed Automaton context (MEMORY.md + skills) into Hermes home if not already present
+SEED_DIR="/opt/hermes-context"
+if [ -d "$SEED_DIR" ]; then
+    echo "Seeding Automaton context into Hermes home..."
+
+    # MEMORY.md — always overwrite to keep context up-to-date with repo
+    if [ -f "$SEED_DIR/MEMORY.md" ]; then
+        cp "$SEED_DIR/MEMORY.md" "$HOME/.hermes/MEMORY.md"
+        echo "  ✓ MEMORY.md seeded"
+    fi
+
+    # Skills — copy only if not already present (don't overwrite user-created skills)
+    if [ -d "$SEED_DIR/skills" ]; then
+        mkdir -p "$HOME/.hermes/skills"
+        for skill_file in "$SEED_DIR/skills"/*.md; do
+            skill_name=$(basename "$skill_file")
+            if [ ! -f "$HOME/.hermes/skills/$skill_name" ]; then
+                cp "$skill_file" "$HOME/.hermes/skills/$skill_name"
+                echo "  ✓ skill seeded: $skill_name"
+            else
+                echo "  ⊝ skill already exists: $skill_name (skipped)"
+            fi
+        done
+    fi
+else
+    echo "WARNING: No context directory found at $SEED_DIR — Hermes will start without Automaton context."
+fi
+
 # Start Hermes Control Interface in background (always, before any config check)
 echo "Starting Hermes Control Interface (HCI)..."
 export PORT=10274

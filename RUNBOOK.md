@@ -90,6 +90,29 @@ docker exec automaton_hermes curl -s -X POST http://127.0.0.1:10274/api/auth/set
 docker compose restart hermes
 ```
 
+### Étape D — Configurer le bot Telegram (canal HITL primaire)
+
+```bash
+# 1. Créer le bot via Telegram
+#    - Ouvrir Telegram → chercher @BotFather → /newbot
+#    - Donner un nom (ex: "Automaton Hermes") et un username (ex: "automaton_hermes_bot")
+#    - Copier le token fourni
+
+# 2. Configurer Hermes avec le token
+./scripts/setup-telegram-bot.sh
+#    Ou manuellement:
+#    docker exec automaton_hermes hermes config set platforms.telegram.bot_token "TON_TOKEN"
+#    docker compose restart hermes
+
+# 3. Vérifier que le contexte Automaton est bien seedé
+docker exec automaton_hermes cat /home/hermes/.hermes/MEMORY.md | head -5
+#    Doit afficher: "# MEMORY.md — Contexte Automaton pour Hermes"
+
+# 4. Vérifier que les skills sont bien seedés
+docker exec automaton_hermes ls /home/hermes/.hermes/skills/
+#    Doit afficher: generate-script.md  generate-image.md  generate-speech.md  publish-content.md  pipeline-orchestrator.md
+```
+
 > **Note :** Le Gateway API est activé et configuré automatiquement au démarrage grâce à `entrypoint.sh`. Vous n'avez plus besoin de le configurer manuellement via le CLI ou le dashboard.
 
 ---

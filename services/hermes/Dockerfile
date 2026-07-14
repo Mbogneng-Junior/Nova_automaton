@@ -79,6 +79,7 @@ RUN cd /opt/hci && npm install && npm run build
 EXPOSE 8123
 
 COPY --chown=hermes:hermes entrypoint.sh /home/hermes/entrypoint.sh
+COPY --chown=hermes:hermes context/ /opt/hermes-context/
 RUN chmod +x /home/hermes/entrypoint.sh
 
 ENTRYPOINT ["/home/hermes/entrypoint.sh"]
