@@ -94,7 +94,14 @@ hermes config set platforms.api_server.enabled true &>/dev/null || true
 hermes config set platforms.api_server.extra.port 8123 &>/dev/null || true
 hermes config set GATEWAY_ALLOW_ALL_USERS true &>/dev/null || true
 
+# Generate or reuse a strong API_SERVER_KEY (persists in .hermes so it's stable across restarts)
+KEY_FILE="$HOME/.hermes/.api_server_key"
+if [ ! -f "$KEY_FILE" ]; then
+    openssl rand -hex 32 > "$KEY_FILE"
+    echo "  ✓ Generated new API_SERVER_KEY"
+fi
+export API_SERVER_KEY="$(cat "$KEY_FILE")"
+
 # Start Hermes Gateway
 echo "Starting Hermes Gateway..."
-export API_SERVER_KEY="hsk_default"
 hermes gateway
